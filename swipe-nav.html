@@ -8,7 +8,7 @@
     <style>
     html,
     body,
-    .content {
+    .content,.container{
         height: 100%;
     }
     body{
@@ -39,7 +39,7 @@
         weixin: /MQQBrowser|qq/i.test(navigator.userAgent),
         nav: document.querySelector('.app-swiper-nav'), //导航区域
         hands: document.querySelector('.nav-hands'), //用来显示导航的手柄区域
-        bgImg: 'static/img/bg2.jpg', //导航背景图片
+        bgImg: '', //导航背景图片
         duration: 300, //导航过度时常
         moveStart: 0, //关闭时 开始位置
         movePosition: 0, //关闭时 移动位移
