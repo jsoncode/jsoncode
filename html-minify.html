@@ -138,7 +138,11 @@
 
     function minJs(js) {
         // 删除注释
-        js = js.replace(/\/\*[\s\S]*?\*\/|\/\/[\s\S]+?\n/g,'');
+        js = js.replace(/\/\*[\s\S]*?\*\/|\/\/[\s\S]+?\n|^\s+$/g,'');
+        js = js.replace(/\s+(var|let|const|import|class|function|if|console|typeof)/g,function (v) {
+            return v.replace(/^\s+/g,'');
+        });
+        console.log(js);
         return js.replace(/\s*[,;\{\}:=\?\!\|\(\)\+-\/\*%]\s*/g, function(v) {
             return v.trim();
         });
