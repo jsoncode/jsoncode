@@ -131,13 +131,15 @@
     }
 
     function minCss(css) {
-        return css.replace(/\s*[,:;\{\}]\s*|/g, function(v) {
+        return css.replace(/\s*[,;\{\}:]\s*|/g, function(v) {
             return v.trim();
         });
     }
 
     function minJs(js) {
-        return js.replace(/\s*[,:;-%=\+\*\/\?\!\|\(\)\{\}]\s*/g, function(v) {
+        // 删除注释
+        js = js.replace(/\/\*[\s\S]*?\*\/|\/\/[\s\S]+?\n/g,'');
+        return js.replace(/\s*[,;\{\}:=\?\!\|\(\)\+-\/\*%]\s*/g, function(v) {
             return v.trim();
         });
     }
