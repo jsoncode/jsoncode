@@ -31,6 +31,9 @@
         background-color: #159957;
         background-image: linear-gradient(120deg, #155799, #159957);
     }
+    .app > img{
+        display: none;
+    }
     
     .content {
         height: 100px;
@@ -56,6 +59,7 @@
 
 <body>
     <div id="app" class="app">
+        <img src="http://vsou.image.alimmdn.com/idcard?spm=a312x.7755591.0.0.478zHv" alt="">
         <h2>身份证查询</h2>
         <input type="text" v-model="id">
         <div v-text="show" class="content"></div>
