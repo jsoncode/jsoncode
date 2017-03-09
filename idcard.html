@@ -54,6 +54,16 @@
         box-sizing: border-box;
         margin-bottom: 20px;
     }
+    .footer{
+        position:absolute;
+        bottom:30px;
+        left:0;
+        right:0;
+        text-align:center;
+    }
+        .footer a{
+            color:#fff;
+        }
     </style>
 </head>
 
@@ -63,6 +73,9 @@
         <h2>身份证查询</h2>
         <input type="text" v-model="id">
         <div v-text="show" class="content"></div>
+        <div class="footer">
+            <a href="https://github.com/jsoncode/jsoncode.github.io/issues">问题反馈·bug提交</a>
+        </div>
     </div>
     <script src="//cdn.bootcss.com/vue/2.2.1/vue.min.js"></script>
     <script src="IDCard.js"></script>
