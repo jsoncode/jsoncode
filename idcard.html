@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset='utf-8'>
+    <title>身份证号查询</title>
+    <style>
+    html,
+    body,
+    .app {
+        height: 100%;
+    }
+    
+    body {
+        margin: 0;
+        padding: 0;
+    }
+    
+    .app {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        flex-direction: column;
+        padding: 3em;
+        color: #fff;
+        box-sizing: border-box;
+        text-align: center;
+        background-color: #159957;
+        background-image: linear-gradient(120deg, #155799, #159957);
+    }
+    
+    .content {
+        height: 100px;
+    }
+    
+    h2 {
+        font-weight: 300;
+        margin-top: -100px;
+    }
+    
+    input {
+        width: 300px;
+        height: 40px;
+        border: 0;
+        padding: 10px;
+        outline: 0;
+        font-size: 20px;
+        box-sizing: border-box;
+        margin-bottom: 20px;
+    }
+    </style>
+</head>
+
+<body>
+    <div id="app" class="app">
+        <h2>身份证查询</h2>
+        <input type="text" v-model="id">
+        <div v-text="show" class="content"></div>
+    </div>
+    <script src="//cdn.bootcss.com/vue/2.2.1/vue.min.js"></script>
+    <script src="IDCard.js"></script>
+    <script>
+    new Vue({
+        el: '#app',
+        data: {
+            id: '',
+            show: '',
+        },
+        watch: {
+            id: function(id) {
+                var vm = this;
+                var keyA = id.substr(0, 2),
+                    keyB = id.substr(2, 2),
+                    keyC = id.substr(4, 2),
+                    str = '',
+                    a = keyA&&IDCard[keyA],
+                    b = keyB&&a&&a[keyB],
+                    c = keyC&&b&&b[keyC];
+                	a = a&&a.name;
+                	b = b&&b.name;
+                	str = (a+' '+b+' '+c).replace(/undefined/g,'xx');
+
+                	// birthday
+                	var date = ['','',''];
+                	if (id.length>6) {
+                		date[0] = id.substr(6,4);
+                		if (id.length>10) {
+                			date[1] = id.substr(10,2);
+                			if (id.length>12) {
+                				date[2] = id.substr(12,2);
+                			}
+                		}
+                	}
+                	str += date.join(' ');
+
+                	// sex
+                	var sex = '';
+                	if (id.length>16) {
+                		console.log(id.substr(16,1));
+                		sex = id.substr(16,1)%2==0?' 女 ':' 男 ';
+                	}
+                	str += sex;
+                	vm.show = str;
+            }
+        }
+    });
+    </script>
+</body>
+
+</html>
