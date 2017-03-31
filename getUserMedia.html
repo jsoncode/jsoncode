@@ -146,7 +146,7 @@
             // }
         }
         navigator.getUserMedia(constraints, function(stream) {
-            nsole.log(stream);
+            console.log(stream);
             window.stream = stream; // stream available to console
             video.src = window.URL.createObjectURL(stream);
             console.log(window.URL.createObjectURL(stream));
