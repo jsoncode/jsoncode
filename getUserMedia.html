@@ -152,7 +152,9 @@
     function getMedia(constraints) {
         if (!!stream) {
             video.src = null;
-            stream.stop();
+            try{
+            	stream.stop();
+            }catch(e){}
         }
         navigator.getUserMedia(constraints, successCallback, errorCallback);
     }
