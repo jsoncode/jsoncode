@@ -158,7 +158,7 @@
             try {
                 stream.stop();
             } catch (e) {
-            	stream.removeStream();
+            	stream.removeTrack();
             }
         }
         navigator.getUserMedia(constraints, successCallback, errorCallback);
