@@ -91,6 +91,21 @@
     function successCallback(stream) {
         console.log(stream);
         window.stream = stream; // stream available to console
+        stream.onactive=function () {
+        	console.log('onactive');
+        }
+        stream.onaddtrack=function () {
+        	console.log('onaddtrack');
+        }
+        stream.onended=function () {
+        	console.log('onended');
+        }
+        stream.oninactive=function () {
+        	console.log('oninactive');
+        }
+        stream.onremovetrack=function () {
+        	console.log('onremovetrack');
+        }
         var src = window.URL.createObjectURL(stream);
         video.src = src;
         console.log(src);
