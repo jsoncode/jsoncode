@@ -91,7 +91,9 @@
     function successCallback(stream) {
         console.log(stream);
         window.stream = stream; // stream available to console
-        video.src = window.URL.createObjectURL(stream);
+        var src = window.URL.createObjectURL(stream);
+        video.src = src;
+        console.log(src);
     }
 
     function errorCallback(error) {
