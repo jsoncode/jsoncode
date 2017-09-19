@@ -156,11 +156,11 @@
         if (!!stream) {
             video.src = null;
             // 没有stop方法？ TODO
-            // try {
-            //     stream.stop();
-            // } catch (e) {
-            //     stream.removeTrack();
-            // }
+            try {
+                stream.stop();
+            } catch (e) {
+                stream.removeTrack();
+            }
         }
         navigator.getUserMedia(constraints, function(stream) {
             console.log(stream);
