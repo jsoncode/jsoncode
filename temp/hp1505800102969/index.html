@@ -14,6 +14,7 @@
     <style>
     body {
         background-color: #f3f3f3;
+        padding-bottom: 4rem;
     }
 
     .swiper-container {
@@ -42,6 +43,20 @@
 
     .list {
         margin-bottom: 1rem;
+    }
+
+    .fixed-footer {
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        height: 4rem;
+    }
+
+    .fixed-footer .btn {
+        border-radius: 0;
+        height: 4rem;
+        font-size: 1.3rem;
     }
     </style>
 </head>
@@ -228,16 +243,20 @@
             </div>
         </li>
     </ul>
-    <div class="flex">
+    <div class="flex fixed-footer">
         <div class="col">
-            <a href="tel:17303830030" class="btn btn-blue btn-lg btn-full">
-    			<i class="fa fa-phone"></i>
+            <a href="tel:17303830030" class="btn btn-blue text-center btn-full">
+    			<span class="padding-lr-sm">
+    				<i class="fa fa-phone"></i>
+    			</span>
     			点击拨打
     		</a>
         </div>
         <div class="col">
-            <a href="tel:17303830030" class="btn btn-danger btn-lg btn-full">
-    			<i class="fa fa-phone"></i>
+            <a href="tel:17303830030" class="btn btn-danger text-center btn-full">
+    			<span class="padding-lr-sm">
+    				<i class="fa fa-phone"></i>
+    			</span>
     			立即申请
     		</a>
         </div>
