@@ -1,8 +1,8 @@
 ## my github 
 
-[仓库首页](https://github.com/jsoncode)
+[我的github](https://github.com/jsoncode)
 
-[gitpage仓库首页](https://github.com/jsoncode/jsoncode.github.io)
+[我的gitpage](https://github.com/jsoncode/jsoncode.github.io)
 
 [materialDesign](https://jsoncode.github.io/materialDesign)
 
@@ -14,15 +14,4 @@
 
 [中国居民身份证查询](https://jsoncode.github.io/idcard)
 
-
-## bookmarks
-
-### MDN
-[https://developer.mozilla.org/zh-CN/docs/Web](https://developer.mozilla.org/zh-CN/docs/Web)
-
-### stackoverflow
-[http://stackoverflow.com/documentation](http://stackoverflow.com/documentation)
-
-### segmentfault
-[https://segmentfault.com/](https://segmentfault.com/)
-
+[H5主播端直播demo](https://jsoncode.github.io/getUserMedia)
