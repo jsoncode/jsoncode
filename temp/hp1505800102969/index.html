@@ -12,9 +12,10 @@
     <link rel="stylesheet" href="../../flex-ui/css/flex-ui.css">
     <script src="../../flex-ui/flex-ui.js"></script>
     <style>
-    body{
-    	background-color: #f3f3f3;
+    body {
+        background-color: #f3f3f3;
     }
+
     .swiper-container {
         background-color: #333;
     }
@@ -29,19 +30,25 @@
         margin: 0;
         padding: 0;
     }
-    .swiper-pagination-bullet{
-    	height: .5rem;
-    	width: .5rem;
+
+    .swiper-pagination-bullet {
+        height: .5rem;
+        width: .5rem;
     }
-    .border-r{
-    	border-right: 1px solid #ddd;
+
+    .border-r {
+        border-right: 1px solid #ddd;
+    }
+
+    .list {
+        margin-bottom: 1rem;
     }
     </style>
 </head>
 
 <body>
     <div class="padding-sm text-y-center bg-white">
-        <div>
+        <div class="flex">
             <img src="logo.png" style="height: 3rem;">
         </div>
         <h2 class="col padding-lr">
@@ -57,74 +64,208 @@
         </div>
         <div class="swiper-pagination"></div>
     </div>
-    <h2 class="padding text-center bg-white text-warning margin-t margin-b">
-    	<i class="fa fa-phone"></i>
-    	<div class="padding-lr-sm">17303830030</div>
-    </h2>
+    <a href="tel:17303830030" class="padding text-center bg-white text-warning margin-t margin-b">
+        <h2><i class="fa fa-phone"></i></h2>
+        <h2 class="padding-lr-sm">17303830030</h2>
+    </a>
     <div class="flex border-tb bg-white">
-    	<div class="col flex flex-column text-center padding-tb border-r">
-    		<div class="padding-tb">
-    			<div class="avatar bg-warning text-white">
-    				<i class="fa fa-rmb"></i>
-    			</div>
-    		</div>
-    		<div>
-    			高额贷款
-    		</div>
-			<div>
-				<small>最高达千万</small>
-			</div>
-    	</div>
-    	<div class="col flex flex-column text-center padding-tb border-r">
-    		<div class="padding-tb">
-    			<div class="avatar bg-blue text-white">
-    				<i class="fa fa-rocket"></i>
-    			</div>
-    		</div>
-    		<div>
-    			快速放款
-    		</div>
-			<div>
-				<small>最快1小时</small>
-			</div>
-    	</div>
-    	<div class="col flex flex-column text-center padding-tb border-r">
-    		<div class="padding-tb">
-    			<div class="avatar bg-warning text-white">
-    				<i class="fa fa-money"></i>
-    			</div>
-    		</div>
-    		<div>
-    			低利率
-    		</div>
-			<div>
-				<small>最低达2厘7</small>
-			</div>
-    	</div>
-    	<div class="col flex flex-column text-center padding-tb border-r">
-    		<div class="padding-tb">
-    			<div class="avatar bg-warning text-white">
-    				<i class="fa fa-unlock-alt"></i>
-    			</div>
-    		</div>
-    		<div>
-    			低门槛
-    		</div>
-			<div>
-				<small>月入2千即可贷</small>
-			</div>
-    	</div>
+        <div class="col flex flex-column text-center padding-tb border-r">
+            <div class="padding-tb">
+                <div class="avatar bg-warning text-white">
+                    <i class="fa fa-rmb"></i>
+                </div>
+            </div>
+            <div>
+                高额贷款
+            </div>
+            <div>
+                <small>最高达千万</small>
+            </div>
+        </div>
+        <div class="col flex flex-column text-center padding-tb border-r">
+            <div class="padding-tb">
+                <div class="avatar bg-blue text-white">
+                    <i class="fa fa-rocket"></i>
+                </div>
+            </div>
+            <div>
+                快速放款
+            </div>
+            <div>
+                <small>最快1小时</small>
+            </div>
+        </div>
+        <div class="col flex flex-column text-center padding-tb border-r">
+            <div class="padding-tb">
+                <div class="avatar bg-warning text-white">
+                    <i class="fa fa-money"></i>
+                </div>
+            </div>
+            <div>
+                低利率
+            </div>
+            <div>
+                <small>最低达2厘7</small>
+            </div>
+        </div>
+        <div class="col flex flex-column text-center padding-tb border-r">
+            <div class="padding-tb">
+                <div class="avatar bg-warning text-white">
+                    <i class="fa fa-unlock-alt"></i>
+                </div>
+            </div>
+            <div>
+                低门槛
+            </div>
+            <div>
+                <small>月入2千即可贷</small>
+            </div>
+        </div>
     </div>
-    <h2 class="bg-white text-center padding margin-b">
-    	<div class="text-warning">手机一点</div>
-    	<div class="text-black">申请贷款</div>
-    </h2>
+    <a href="tel:17303830030" class="bg-white text-center padding margin-b">
+        <h2 class="text-warning">手机一点</h2>
+        <h2 class="text-black">申请贷款</h2>
+    </a>
+    <ul class="bg-white list">
+        <li class="li">
+            我有房 -- <span class="text-danger">有房就能贷</span>
+        </li>
+        <li class="padding-tb">
+            <h1>
+    			<i class="fa fa-home text-blue"></i>
+    		</h1>
+            <div class="col padding-lr">
+                <div>
+                    <div><span class="text-danger">放款快</span>（最快2天内放款）</div>
+                    <div><span class="text-danger">利率低</span>（利率低至5厘）</div>
+                    <div><span class="text-danger">全款房、按揭房皆可办理</span></div>
+                </div>
+            </div>
+            <div class="padding">
+                <a href="" class="btn btn-danger btn-sm">马上申请</a>
+            </div>
+        </li>
+    </ul>
+    <ul class="bg-white list">
+        <li class="li">
+            我有车 -- <span class="text-danger">有车就能贷</span>
+        </li>
+        <li class="padding-tb">
+            <h1>
+    			<i class="fa fa-car text-success"></i>
+    		</h1>
+            <div class="col padding-lr">
+                <div>
+                    <div><span class="text-danger">押车、不押车</span>客户自由选择</div>
+                    <div><span class="text-danger">全款车、按揭车</span>都可以做</div>
+                    <div>不看征信流水、最快<span class="text-danger">当天</span>放款</div>
+                </div>
+            </div>
+            <div class="padding">
+                <a href="" class="btn btn-danger btn-sm">马上申请</a>
+            </div>
+        </li>
+    </ul>
+    <ul class="bg-white list">
+        <li class="li">
+            我有工作 -- <span class="text-danger">月入2000即可贷</span>
+        </li>
+        <li class="padding-tb">
+            <h1>
+    			<i class="fa fa-credit-card-alt text-warning"></i>
+    		</h1>
+            <div class="col padding-lr">
+                <div>
+                    <div><span class="text-danger">无抵押、无担保</span></div>
+                    <div><span class="text-danger">1-50万</span>、利率全市最低</div>
+                    <div><span class="text-danger">当天</span>放款</div>
+                </div>
+            </div>
+            <div class="padding">
+                <a href="" class="btn btn-danger btn-sm">马上申请</a>
+            </div>
+        </li>
+    </ul>
+    <ul class="bg-white list">
+        <li class="li">
+            我急着用钱 -- <span class="text-danger">最快当天放款</span>
+        </li>
+        <li class="padding-tb">
+            <h1>
+    			<i class="fa fa-line-chart text-warning"></i>
+    		</h1>
+            <div class="col padding-lr">
+                <div class="index-right">
+                    <div><span class="text-danger">不公正、不抵押</span></div>
+                    <div>垫资赎楼、垫资提放</div>
+                    <div><span class="text-danger">10-1000万</span></div>
+                </div>
+            </div>
+            <div class="padding">
+                <a href="" class="btn btn-danger btn-sm">马上申请</a>
+            </div>
+        </li>
+    </ul>
+    <ul class="bg-white list">
+        <li class="li">
+            <span class="text-danger">兴佳金融--有房就能贷款、利率低 ！</span>
+        </li>
+        <li class="padding-tb">
+            <div>
+                <div>
+                    <strong>公司简介：</strong> 专业新楼盘按揭贷款，二手房按揭贷款，现房抵押，信用贷款，金融产品设计、外包。
+                </div>
+                <div>
+                    <strong>联系人：</strong> 韩鹏
+                </div>
+                <div>
+                    <strong>联系电话：</strong> <a href="tel:17303830030" class="text-blue">17303830030</a>
+                </div>
+                <div>
+                    <strong>公司地址：</strong> 郑州市金水区金水路与玉凤路交叉口浦发国际金融中心B座23A10
+                </div>
+                <div class="map">
+                    <input name="txt_jingdu" type="text" value="113.675844" id="txt_jingdu" style="display: none" />
+                    <input name="txt_weidu" type="text" value="34.726018" id="txt_weidu" style="display: none" />
+                    <div id="allmap" style="margin-bottom: 0px; width: 100%; height:220px;"></div>
+                </div>
+            </div>
+        </li>
+    </ul>
+    <div class="flex">
+        <div class="col">
+            <a href="tel:17303830030" class="btn btn-blue btn-lg btn-full">
+    			<i class="fa fa-phone"></i>
+    			点击拨打
+    		</a>
+        </div>
+        <div class="col">
+            <a href="tel:17303830030" class="btn btn-danger btn-lg btn-full">
+    			<i class="fa fa-phone"></i>
+    			立即申请
+    		</a>
+        </div>
+    </div>
     <script src="https://cdn.bootcss.com/Swiper/3.4.2/js/swiper.min.js"></script>
+    <script src="http://api.map.baidu.com/api?v=2.0&ak=4CjU7HrG4onvuSt3DB4fFbcwEqYd9sDp"></script>
     <script>
     var swiper = new Swiper('.swiper-container', {
         pagination: '.swiper-pagination',
         paginationClickable: true
     });
+    </script>
+    <script>
+    // 百度地图API功能
+    var map = new BMap.Map("allmap");
+    var jingdu = document.getElementById("txt_jingdu").value;
+    var weidu = document.getElementById("txt_weidu").value;
+    var point = new BMap.Point(jingdu, weidu);
+    map.centerAndZoom(point, 15);
+    map.enableScrollWheelZoom(); //启用滚轮放大缩小，默认禁用
+    map.enableContinuousZoom(); //启用地图惯性拖拽，默认禁用
+    var marker = new BMap.Marker(point); // 创建标注
+    map.addOverlay(marker); // 将标注添加到地图中
+    marker.setAnimation(BMAP_ANIMATION_BOUNCE); //跳动的动画
     </script>
 </body>
 
