@@ -78,9 +78,10 @@ body,
     -o-transform: translateX(-50%);
     transform: translateX(-50%);
 }
-#wrapper .wraper-text:after{
+#wrapper .wraper-text:before{
     content: '此网页由 mp.weixin.qq.com 提供';
     display: block;
+    margin-bottom: 0.5rem;
 }
 
 #scroller {
