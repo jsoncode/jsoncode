@@ -62,14 +62,14 @@ body,
     -ms-text-size-adjust: none;
     -o-text-size-adjust: none;
     text-size-adjust: none;
-    background-color: #444;
+    background-color: #2E3132;
 }
 #wrapper .wraper-text{
     position: absolute;
     top: 2rem;
     left: 50%;
     z-index: 0;
-    color: #999;
+    color: #777;
     width: 100%;
     text-align: center;
     -webkit-transform: translateX(-50%);
