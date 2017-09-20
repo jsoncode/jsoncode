@@ -6,6 +6,8 @@
 
 [materialDesign](https://jsoncode.github.io/materialDesign)
 
+[flex-ui](https://jsoncode.github.io/flex-ui)
+
 [我的js函数库](https://jsoncode.github.io/javascriptFuction)
 
 [gitpage入门](https://jsoncode.github.io/start-gitpage)

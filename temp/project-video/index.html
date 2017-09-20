@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="utf-8">
+    <title>flex-ui framework</title>
+    <meta name="viewport" content="width=device-width,initial-scale=0.5, user-scalable=0">
+    <link href="css/flex-ui.css" rel="stylesheet">
+    <link href="css/style.css" rel="stylesheet">
+    <script>
+    var config = {
+        title: '开豪车狗眼看人低殴打农民工，五年后...', //标题
+        createTime: '2017-09-15', //时间
+        author: { //作者
+            name: '内部爆料',
+            link: 'http://baidu.com',
+        },
+        adBar: { //顶部广告条
+            img: '',
+            link: 'http://baidu.com',
+        },
+        video: { //视频
+            src: 'http://ugcbsy.qq.com/flv/69/66/n03581d9ccp.p701.1.mp4?sdtfrom=v1010&guid=86a13a6453d2cf3b2e006dc1a92344b1&vkey=52020C45F8F1A1947C87DBF2C9D28A33966650401605E8D60CE51CB20CDD379AD3976AD3E8286BFE86258813E7B1568A5CE039C35C11EC7EEDCF7FD2DAA08A775E1BAA33D1D4E96029E95D3539802D55B011DFB4588BDF68EAC22767E0ECEC589F635B2669120944ABC2A6EA14BF0E10&platform=2',
+            currentTime: 10, //视频播放到什么时间弹出广告，单位秒
+            rate: 0, //每过几秒钟弹出一次广告，0表示只弹一次
+        },
+        readNum: { //阅读量
+            link: 'http://baidu.com',
+            num: 52,
+            like: 5,
+            clicked: false,
+        },
+        adList: [ //广告列表
+            {
+                title: '离异少妇约我半夜去她家看电视，年幼的我是否该去？',
+                desc: '30岁，离异少妇',
+                img: '',
+                link: '',
+            },
+            {
+                title: '离异少妇约我半夜去她家看电视，年幼的我是否该去？',
+                desc: '30岁，离异少妇',
+                img: '',
+                link: '',
+            },
+            {
+                title: '离异少妇约我半夜去她家看电视，年幼的我是否该去？',
+                desc: '30岁，离异少妇',
+                img: '',
+                link: '',
+            },
+            {
+                title: '离异少妇约我半夜去她家看电视，年幼的我是否该去？',
+                desc: '30岁，离异少妇',
+                img: '',
+                link: '',
+            },
+            {
+                title: '离异少妇约我半夜去她家看电视，年幼的我是否该去？',
+                desc: '30岁，离异少妇',
+                img: '',
+                link: '',
+            }
+        ],
+    };
+    </script>
+</head>
+
+<body>
+    <div class="pagewrap">
+        <div id="wrapper">
+            <div id="scroller">
+                <app></app>
+            </div>
+            <div class="wraper-text"></div>
+        </div>
+    </div>
+    <template id="app">
+        <div class="body">
+            <div class="padding bg-white">
+                <h1>{{title}}</h1>
+                <div class="flex padding-tb">
+                    <div class="text-muted">
+                        {{createTime}}
+                    </div>
+                    <div class="col text-blue padding-lr">
+                        <a :href="author.link">{{author.name}}</a>
+                    </div>
+                </div>
+                <div class="">
+                    <a :href="adBar.link" class="flex">
+                    <img :src="adBar.img">
+                </a>
+                </div>
+                <div class="padding-tb">
+                    <video controls :src="video.src"></video>
+                </div>
+                <div class="flex">
+                    <div>
+                        <a :href="readNum.link" class="text-blue">阅读原文</a>
+                        <span class="text-muted padding-lr">阅读 {{readNum.num}}</span>
+                        <span class="text-muted" @click="like">
+                        <i class="fa" :class="[readNum.clicked?'fa-thumbs-up':'fa-thumbs-o-up']"></i>
+                        {{readNum.like}}
+                    </span>
+                    </div>
+                    <div class="col">
+                    </div>
+                </div>
+            </div>
+            <div class="padding">
+                <div class="ad-line text-center nowrap text-muted">
+                    <span class="bg-gray">广告</span>
+                </div>
+            </div>
+            <ul class="list bg-white">
+                <li v-for="item in adList" class="btn-link" @click="openAd(item)">
+                    <div class="list-img">
+                        <img :src="item.img">
+                    </div>
+                    <div class="col padding-sm">
+                        <h4 class="text-no-wrap-2 padding-tb-sm">{{item.title}}</h4>
+                        <div class="text-no-wrap flex">
+                            <div class="text-muted">
+                                <small>{{item.desc}}</small>
+                            </div>
+                            <div class="col text-x-end ">
+                                <div class="btn btn-danger btn-sm">立即查看</div>
+                            </div>
+                        </div>
+                    </div>
+                </li>
+            </ul>
+            <div class="cover" id="myalert" data-shown="">
+                <div class="alert">
+                    <header class="alert-title">提示</header>
+                    <div class="alert-content">
+                        <div class="alert-content-text"></div>
+                    </div>
+                    <footer class="alert-bottom">
+                        <button class="btn btn-default btn-full">关闭</button>
+                    </footer>
+                </div>
+            </div>
+        </div>
+    </template>
+    <script src="js/vue.min.js"></script>
+    <script src="js/iscroll.js"></script>
+    <script src="js/flex-ui.js"></script>
+</body>
+
+</html>

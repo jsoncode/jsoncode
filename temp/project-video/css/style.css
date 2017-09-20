@@ -1,0 +1,97 @@
+body,
+.bg-gray {
+    background-color: #f3f3f3;
+}
+
+.body {
+    max-width: 50rem;
+    margin: 0 auto;
+}
+body{
+    overflow: hidden;
+}
+
+img {
+    max-width: 100%;
+}
+
+video {
+    display: block;
+    width: 100%;
+}
+
+.ad-line:after,
+.ad-line:before {
+    content: '';
+    display: block;
+    width: 50%;
+    height: 1px;
+    background-color: #ddd;
+}
+
+.ad-line .bg-gray {
+    padding: 0 1rem;
+}
+
+.list-img {
+    width: 7rem;
+}
+
+.list-img img {
+    width: 100%;
+}
+html,
+body,
+.pagewrap,
+#wrapper{
+    height: 100%;
+    width: 100%;
+}
+
+#wrapper {
+    position: relative;
+    overflow: hidden;
+    -ms-touch-action: none;
+    -webkit-touch-callout: none;
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
+    -webkit-text-size-adjust: none;
+    -moz-text-size-adjust: none;
+    -ms-text-size-adjust: none;
+    -o-text-size-adjust: none;
+    text-size-adjust: none;
+    background-color: #444;
+}
+#wrapper .wraper-text{
+    position: absolute;
+    top: 2rem;
+    left: 50%;
+    z-index: 0;
+    color: #999;
+    width: 100%;
+    text-align: center;
+    -webkit-transform: translateX(-50%);
+    -moz-transform: translateX(-50%);
+    -ms-transform: translateX(-50%);
+    -o-transform: translateX(-50%);
+    transform: translateX(-50%);
+}
+#wrapper .wraper-text:after{
+    content: '此网页由 mp.weixin.qq.com 提供';
+    display: block;
+}
+
+#scroller {
+    z-index: 1;
+    width: 100%;
+    background-color: #fff;
+    position: absolute;
+    -webkit-tap-highlight-color: rgba(0, 0, 0, 0);
+    -webkit-transform: translateZ(0);
+    -moz-transform: translateZ(0);
+    -ms-transform: translateZ(0);
+    -o-transform: translateZ(0);
+    transform: translateZ(0);
+}
