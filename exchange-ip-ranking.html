@@ -143,6 +143,7 @@
             echartsObj: {},
             charts_id_pre: 'charts_id_',
             search: '',
+            getChartTimer:null,
         },
         methods: {
             getList: function() {
@@ -169,15 +170,29 @@
             },
             getChartData: function() {
                 var vm = this;
-                var url = 'http://123.57.77.177:9090/getAlexaIpNumHandler?site=';
-                vm.list.forEach(function(v) {
-                    axios.get(url + v.name).then(function(response) {
-                        if (response.data.code == 200 && response.data.body != '' && response.data.body != '[]' && /^\[|\]$/.test(response.data.body)) {
-                            vm.initCharts(v.name, eval(response.data.body));
-                        } else {
-                            vm.initCharts(v.name, []);
-                        }
-                    });
+                var currIdx = 0;
+                vm.getChartDataAction(vm.list[currIdx]);
+                currIdx++;
+                vm.getChartTimer = setInterval(function() {
+                    if (currIdx < vm.list.length - 1) {
+                        vm.getChartDataAction(vm.list[currIdx]);
+                        currIdx++;
+                    } else {
+                        clearInterval(vm.getChartTimer);
+                    }
+                }, 400);
+            },
+            getChartDataAction: function(v) {
+                var vm = this;
+                var url = 'https://123.57.77.177:8443/getAlexaIpNumHandler?site=';
+                axios.get(url + v.name).then(function(response) {
+                    if (response.data.code == 200 && response.data.body != '' && response.data.body != '[]' && /^\[|\]$/.test(response.data.body)) {
+                        vm.initCharts(v.name, eval(response.data.body));
+                    } else {
+                        vm.initCharts(v.name, []);
+                    }
+                }).catch(function(response) {
+                    clearInterval(vm.getChartTimer);
                 });
             },
             previous: function() {
