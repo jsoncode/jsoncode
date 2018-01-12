@@ -9,6 +9,10 @@
     <meta name="description" content="">
     <link rel="stylesheet" href="https://cdn.bootcss.com/bootstrap/4.0.0-beta.3/css/bootstrap.min.css">
     <style>
+    html {
+        font-weight: 300;
+    }
+
     .body-coontent {
         height: calc(100vh - 56px);
         overflow: auto;
@@ -46,6 +50,13 @@
 
     .hover-bg:hover {
         background-color: #f0f0f0;
+    }
+
+    @media (max-width: 768px) {
+
+        .charts-item {
+            height: 200px;
+        }
     }
     </style>
 </head>
@@ -101,9 +112,9 @@
                     </div>
                 </div>
                 <div class="container">
-                    <div class="py-3 text-center d-flex justify-content-center">
+                    <div class="py-3 text-center d-flex justify-content-center flex-wrap">
                         <nav v-if="pageCount>0">
-                            <ul class="pagination">
+                            <ul class="pagination flex-wrap">
                                 <li class="page-item" :class="{disabled:page<=1}" @click="previous"><a class="page-link" href="avascript:void(0);">Previous</a></li>
                                 <li class="page-item" :class="{active:page==item}" v-for="item in pageCount" @click="setPage(item)"><a class="page-link" href="javascript:void(0);">{{item}}</a></li>
                                 <li class="page-item" :class="{disabled:page>=pageCount}" @click="next"><a class="page-link" href="avascript:void(0);">Next</a></li>
@@ -125,9 +136,10 @@
         el: '#app',
         template: '#app-template',
         data: {
-            page: location.hash == '' ? 1 : location.hash.replace('#', ''),
+            page: location.hash == '' ? 1 : location.hash.replace('#', '') * 1,
             list: [],
             pageCount: -1,
+            showNextPageCount: 2,
             echartsObj: {},
             charts_id_pre: 'charts_id_',
             search: '',
@@ -160,7 +172,7 @@
                 var url = 'http://123.57.77.177:9090/getAlexaIpNumHandler?site=';
                 vm.list.forEach(function(v) {
                     axios.get(url + v.name).then(function(response) {
-                        if (response.data.code == 200 && response.data.body != '' && response.data.body != '[]') {
+                        if (response.data.code == 200 && response.data.body != '' && response.data.body != '[]' && /^\[|\]$/.test(response.data.body)) {
                             vm.initCharts(v.name, eval(response.data.body));
                         } else {
                             vm.initCharts(v.name, []);
@@ -188,12 +200,25 @@
                 vm.getList();
             },
             num2tring: function(num) {
-                if (num>1e4) {
-                    num = (num/1e4).toFixed(2)+'w';
-                }else if(num>1e3) {
-                    num = (num/1e3).toFixed(2)+'k';
+                var vm = this;
+                if (num > 1e4) {
+                    num = (num / 1e4).toFixed(2);
+                    if (/00$/.test(num)) {
+                        num = parseInt(num);
+                    }
+                    num += 'w';
+                } else if (num > 1e3) {
+                    num = (num / 1e3).toFixed(2);
+                    if (/00$/.test(num)) {
+                        num = parseInt(num);
+                    }
+                    num += 'k';
                 }
                 return num;
+            },
+            showThisPage: function(item) {
+                var vm = this;
+                // return item>(vm.page-vm.showNextPageCount+1)&&item<(vm.page+vm.showNextPageCount-1);
             },
             initCharts: function(site, data) {
                 var vm = this;
@@ -226,7 +251,8 @@
                                 fontSize: '12',
                             },
                             trigger: 'axis',
-                            formatter: function(params, ticket, callback) {
+                            formatter: function(params) {
+                                // 格式化提示框
                                 var obj = JSON.parse(params[0].axisValue);
                                 var str = obj.time + '：IP：' + vm.num2tring(params[0].data) + '<br/>' + '日均：' + vm.num2tring(parseInt(params[0].data / 7)) + '<br /> 时间：' + obj.StartTime + ' 到 ' + obj.EndTime;
                                 return str;
@@ -253,12 +279,17 @@
                                 lineStyle: {
                                     color: '#ccc'
                                 }
+                            },
+                            axisLabel: {
+                                formatter: function(val) {
+                                    return vm.num2tring(val);
+                                }
                             }
                         }],
                         grid: {
                             top: '20',
-                            left: '80',
-                            right: '4%',
+                            left: '30',
+                            right: '0',
                             bottom: '20',
                             containLabel: false
                         },
