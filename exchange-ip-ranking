@@ -1,0 +1,320 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="initial-scale=1,user-scalable=no,minimal-ui">
+    <title>排名</title>
+    <meta name="keywords" content="">
+    <meta name="description" content="">
+    <link rel="stylesheet" href="http://cdn.bootcss.com/bootstrap/4.0.0-beta.3/css/bootstrap.min.css">
+    <style>
+    .body-coontent {
+        height: calc(100vh - 56px);
+        overflow: auto;
+    }
+
+    .loading {
+        height: 100vh;
+        width: 100vw;
+        background-color: #aaa;
+        color: #fff;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        font-size: 40px;
+    }
+
+    .form-inline .form-control {
+        display: inline-flex;
+        flex: 1;
+        margin-right: 1rem;
+    }
+
+    .navbar {
+        box-shadow: 0 1px 3px rgba(0, 0, 0, .1);
+    }
+
+    .charts-item {
+        height: 100px;
+        width: 100%;
+    }
+
+    .hover-bg {
+        transition-duration: .5s;
+    }
+
+    .hover-bg:hover {
+        background-color: #f0f0f0;
+    }
+    </style>
+</head>
+
+<body>
+    <div id="app">
+        <div class="loading">
+            Loading...
+        </div>
+    </div>
+    <template id="app-template">
+        <div class="body">
+            <nav class="navbar navbar-expand-lg navbar-light bg-light">
+                <div class="container">
+                    <a class="navbar-brand" href="javascript:void(0);">Navbar</a>
+                    <button class="navbar-toggler" data-toggle="collapse" data-target="#navbarSupportedContent">
+                        <span class="navbar-toggler-icon"></span>
+                    </button>
+                    <div class="collapse navbar-collapse" id="navbarSupportedContent">
+                        <ul class="navbar-nav mr-auto">
+                            <li class="nav-item">
+                                <a class="nav-link" href="javascript:void(0);">Link</a>
+                            </li>
+                        </ul>
+                        <form class="form-inline my-2 my-lg-0">
+                            <input class="form-control mr-sm-2" type="search" v-model="search" placeholder="Search">
+                            <button class="btn btn-outline-primary my-2 my-sm-0" type="button">Search</button>
+                        </form>
+                    </div>
+                </div>
+            </nav>
+            <div class="body-coontent">
+                <div class="container my-3">
+                    <div class="row d-none d-lg-flex">
+                        <div class="col-12 col-lg-4">
+                            排名 交易所名称
+                        </div>
+                        <div class="col-12 col-lg-8 text-center">
+                            流量
+                        </div>
+                    </div>
+                </div>
+                <div class="hover-bg" v-for="item in list">
+                    <div class="container my-3">
+                        <div class="row py-3">
+                            <div class="col-12 col-md-4 col-lg-3 col-xl-2 pb-2 pb-lg-3">
+                                {{item.level}}&emsp; {{item.name}}
+                            </div>
+                            <div class="col-12 col-md-8 col-lg-9 col-xl-10">
+                                <div class="charts-item" :id="'charts_id_'+item.name"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="container">
+                    <div class="py-3 text-center d-flex justify-content-center">
+                        <nav v-if="pageCount>0">
+                            <ul class="pagination">
+                                <li class="page-item" :class="{disabled:page<=1}" @click="previous"><a class="page-link" href="avascript:void(0);">Previous</a></li>
+                                <li class="page-item" :class="{active:page==item}" v-for="item in pageCount" @click="setPage(item)"><a class="page-link" href="javascript:void(0);">{{item}}</a></li>
+                                <li class="page-item" :class="{disabled:page>=pageCount}" @click="next"><a class="page-link" href="avascript:void(0);">Next</a></li>
+                            </ul>
+                        </nav>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </template>
+    <script src="http://cdn.bootcss.com/jquery/3.2.1/jquery.slim.min.js"></script>
+    <script src="http://cdn.bootcss.com/bootstrap/4.0.0-beta.3/js/bootstrap.min.js"></script>
+    <script src="http://cdn.bootcss.com/axios/0.17.1/axios.min.js"></script>
+    <script src="http://cdn.bootcss.com/qs/6.5.1/qs.min.js"></script>
+    <script src="http://cdn.bootcss.com/vue/2.5.13/vue.js"></script>
+    <script src="http://cdn.bootcss.com/echarts/3.8.5/echarts.min.js"></script>
+    <script>
+    new Vue({
+        el: '#app',
+        template: '#app-template',
+        data: {
+            page: location.hash == '' ? 1 : location.hash.replace('#', ''),
+            list: [],
+            pageCount: -1,
+            echartsObj: {},
+            charts_id_pre: 'charts_id_',
+            search: '',
+        },
+        methods: {
+            getList: function() {
+                var vm = this;
+                vm.echartsObj = {};
+                axios.get('https://block.cc/api/v1/exchange/list?page=' + (vm.page - 1) + '&size=20').then(function(response) {
+                    if (response.data.code == 0) {
+                        vm.pageCount = response.data.data.pageCount;
+                        vm.list = response.data.data.list.sort(function(v1, v2) {
+                            return v1.level > v2.level ? 1 : -1;
+                        });
+                        setTimeout(function() {
+                            vm.list.forEach(function(v) {
+                                vm.initCharts(v.name, []);
+                            });
+                        }, 100);
+                        setTimeout(function() {
+                            vm.getChartData();
+                        }, 300);
+                    } else {
+                        console.log(response.data);
+                    }
+                });
+            },
+            getChartData: function() {
+                var vm = this;
+                var url = 'http://123.57.77.177:9090/getAlexaIpNumHandler?site=';
+                vm.list.forEach(function(v) {
+                    axios.get(url + v.name).then(function(response) {
+                        if (response.data.code == 200 && response.data.body != '' && response.data.body != '[]') {
+                            vm.initCharts(v.name, eval(response.data.body));
+                        } else {
+                            vm.initCharts(v.name, []);
+                        }
+                    });
+                });
+            },
+            previous: function() {
+                var vm = this;
+                if (vm.page > 1) {
+                    vm.page--;
+                    vm.getList();
+                }
+            },
+            next: function() {
+                var vm = this;
+                if (vm.page < vm.pageCount) {
+                    vm.page++;
+                    vm.getList();
+                }
+            },
+            setPage: function(page) {
+                var vm = this;
+                vm.page = page;
+                vm.getList();
+            },
+            num2tring: function(num) {
+                if (num>1e4) {
+                    num = (num/1e4).toFixed(2)+'w';
+                }else if(num>1e3) {
+                    num = (num/1e3).toFixed(2)+'k';
+                }
+                return num;
+            },
+            initCharts: function(site, data) {
+                var vm = this;
+                var dateData = data.map(function(v) {
+                    // return v.week;
+                    return JSON.stringify({
+                        time: v.week,
+                        StartTime: v.StartTime,
+                        EndTime: v.EndTime,
+                    });
+                });
+                var valueData = data.map(function(v) {
+                    return v.data.IpNum;
+                });
+                var id = vm.charts_id_pre + site;
+                if (vm.echartsObj[id] == undefined) {
+                    var myChart = echarts.init(document.getElementById(id));
+                    var option = {
+                        textStyle: {
+                            fontSize: '12',
+                            fontWeight: '300',
+                            color: '#999',
+                        },
+                        visualMap: [{
+                            show: false,
+                            type: 'continuous',
+                        }],
+                        tooltip: {
+                            textStyle: {
+                                fontSize: '12',
+                            },
+                            trigger: 'axis',
+                            formatter: function(params, ticket, callback) {
+                                var obj = JSON.parse(params[0].axisValue);
+                                var str = obj.time + '：IP：' + vm.num2tring(params[0].data) + '<br/>' + '日均：' + vm.num2tring(parseInt(params[0].data / 7)) + '<br /> 时间：' + obj.StartTime + ' 到 ' + obj.EndTime;
+                                return str;
+                            }
+                        },
+                        xAxis: [{
+                            data: dateData,
+                            boundaryGap: true, //文字在坐标轴上
+                            axisLine: {
+                                lineStyle: {
+                                    color: '#ccc'
+                                }
+                            },
+                            axisLabel: {
+                                formatter: function(val) {
+                                    var obj = JSON.parse(val);
+                                    return obj.time;
+                                }
+                            }
+                        }],
+                        yAxis: [{
+                            splitLine: { show: false },
+                            axisLine: {
+                                lineStyle: {
+                                    color: '#ccc'
+                                }
+                            }
+                        }],
+                        grid: {
+                            top: '20',
+                            left: '80',
+                            right: '4%',
+                            bottom: '20',
+                            containLabel: false
+                        },
+                        series: [{
+                            type: 'line',
+                            smooth: true, //是否润滑线条
+                            showSymbol: true, //显示圆点
+                            data: valueData,
+                            label: {
+                                normal: {
+                                    show: true,
+                                    position: 'top'
+                                }
+                            },
+                        }]
+                    };
+                    myChart.showLoading({
+                        effect: 'bubble',
+                        textStyle: {
+                            fontSize: 30
+                        }
+                    });
+                    myChart.setOption(option);
+                    vm.echartsObj[id] = myChart;
+                } else {
+                    //更新数据
+                    var option = vm.echartsObj[id].getOption();
+                    option.xAxis[0].data = dateData;
+                    option.series[0].data = valueData;
+                    vm.echartsObj[id].setOption(option);
+                    vm.echartsObj[id].hideLoading();
+                }
+            }
+        },
+        mounted: function() {
+            var vm = this;
+            vm.getList();
+            window.addEventListener('resize', function() {
+                for (var i in vm.echartsObj) {
+                    if (vm.echartsObj.hasOwnProperty(i)) {
+                        vm.echartsObj[i].resize();
+                    }
+                }
+            }, false);
+        },
+        watch: {
+            page: function(page) {
+                location.hash = page;
+            },
+            search: function(search) {
+                var vm = this;
+
+            }
+        }
+    });
+    </script>
+</body>
+
+</html>
