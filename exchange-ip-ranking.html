@@ -13,6 +13,10 @@
         font-weight: 300;
     }
 
+    .body {
+        padding-top: 60px;
+    }
+
     .body-coontent {
         height: calc(100vh - 56px);
         overflow: auto;
@@ -69,22 +73,10 @@
     </div>
     <template id="app-template">
         <div class="body">
-            <nav class="navbar navbar-expand-lg navbar-light bg-light">
-                <div class="container">
-                    <a class="navbar-brand" href="javascript:void(0);">Navbar</a>
-                    <button class="navbar-toggler" data-toggle="collapse" data-target="#navbarSupportedContent">
-                        <span class="navbar-toggler-icon"></span>
-                    </button>
-                    <div class="collapse navbar-collapse" id="navbarSupportedContent">
-                        <ul class="navbar-nav mr-auto">
-                            <li class="nav-item">
-                                <a class="nav-link" href="javascript:void(0);">Link</a>
-                            </li>
-                        </ul>
-                        <form class="form-inline my-2 my-lg-0">
-                            <input class="form-control mr-sm-2" type="search" v-model="search" placeholder="Search">
-                            <button class="btn btn-outline-primary my-2 my-sm-0" type="button">Search</button>
-                        </form>
+            <nav class="navbar navbar-expand-lg navbar-light bg-light fixed-top">
+                <div class="container text-right justify-content-end">
+                    <div class="form-inline">
+                        <input class="form-control mr-sm-2" v-model="search" placeholder="search">
                     </div>
                 </div>
             </nav>
@@ -99,7 +91,7 @@
                         </div>
                     </div>
                 </div>
-                <div class="hover-bg" v-for="item in list">
+                <div class="hover-bg" v-for="item in searchResult">
                     <div class="container my-3">
                         <div class="row py-3">
                             <div class="col-12 col-md-4 col-lg-3 col-xl-2 pb-2 pb-lg-3">
@@ -138,12 +130,13 @@
         data: {
             page: location.hash == '' ? 1 : location.hash.replace('#', '') * 1,
             list: [],
+            searchResult: [],
             pageCount: -1,
             showNextPageCount: 2,
             echartsObj: {},
             charts_id_pre: 'charts_id_',
             search: '',
-            getChartTimer:null,
+            getChartTimer: null,
         },
         methods: {
             getList: function() {
@@ -152,7 +145,7 @@
                 axios.get('https://block.cc/api/v1/exchange/list?page=' + (vm.page - 1) + '&size=20').then(function(response) {
                     if (response.data.code == 0) {
                         vm.pageCount = response.data.data.pageCount;
-                        vm.list = response.data.data.list.sort(function(v1, v2) {
+                        vm.searchResult = vm.list = response.data.data.list.sort(function(v1, v2) {
                             return v1.level > v2.level ? 1 : -1;
                         });
                         setTimeout(function() {
@@ -356,7 +349,14 @@
             },
             search: function(search) {
                 var vm = this;
-
+                if (search == '') {
+                    vm.searchResult = vm.list
+                } else {
+                    var reg = new RegExp(search, 'i');
+                    vm.searchResult = vm.list.filter(function(v) {
+                        return reg.test(v.name);
+                    });
+                }
             }
         }
     });
