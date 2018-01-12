@@ -347,17 +347,17 @@
             page: function(page) {
                 location.hash = page;
             },
-            search: function(search) {
-                var vm = this;
-                if (search == '') {
-                    vm.searchResult = vm.list
-                } else {
-                    var reg = new RegExp(search, 'i');
-                    vm.searchResult = vm.list.filter(function(v) {
-                        return reg.test(v.name);
-                    });
-                }
-            }
+            // search: function(search) {
+            //     var vm = this;
+            //     if (search == '') {
+            //         vm.searchResult = vm.list
+            //     } else {
+            //         var reg = new RegExp(search, 'i');
+            //         vm.searchResult = vm.list.filter(function(v) {
+            //             return reg.test(v.name);
+            //         });
+            //     }
+            // }
         }
     });
     </script>
