@@ -18,16 +18,6 @@
 
 [getUserMedia 开发api](https://jsoncode.github.io/getUserMedia)
 
-
-
-
-
-
-
-
-
-
-
-
+<br/><br/><br/><br/><br/><br/>
 
 [豫ICP备14012936号-2](http://www.miitbeian.gov.cn)
