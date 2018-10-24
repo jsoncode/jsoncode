@@ -88,6 +88,7 @@
         watch: {
             id: function(id) {
                 var vm = this;
+                var pre = id.substr(0, 2);
                 var keyA = id.substr(0, 2),
                     keyB = id.substr(2, 2),
                     keyC = id.substr(4, 2),
@@ -119,7 +120,9 @@
                 		sex = id.substr(16,1)%2==0?' 女 ':' 男 ';
                 	}
                 	str += sex;
-                	vm.show = str;
+                    if(pre === 'id'){
+                	    vm.show = str;
+                    }
             }
         }
     });
