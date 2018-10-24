@@ -14,6 +14,8 @@
 
 [html,css,js使用js进行压缩](https://jsoncode.github.io/html-minify)
 
-[中国居民身份证查询](https://jsoncode.github.io/idcard)
+[id查询功能](https://jsoncode.github.io/idcard)
 
-[H5主播端直播demo](https://jsoncode.github.io/getUserMedia)
+[getUserMedia 开发api](https://jsoncode.github.io/getUserMedia)
+
+[豫ICP备14012936号-2](http://www.miitbeian.gov.cn)
