@@ -89,6 +89,7 @@
             id: function(id) {
                 var vm = this;
                 var pre = id.substr(0, 2);
+                id = id.substr(2,id.length);
                 var keyA = id.substr(0, 2),
                     keyB = id.substr(2, 2),
                     keyC = id.substr(4, 2),
