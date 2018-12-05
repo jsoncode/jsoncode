@@ -8,7 +8,7 @@
     <meta name="viewport" content="initial-scale=1, maximum-scale=3, minimum-scale=1, user-scalable=no">
     <title>身份证号校验</title>
     <style>
-    html,
+        html,
     body,
     .app {
         height: 100%;
@@ -82,7 +82,7 @@
 </head>
 
 <body>
-    <div id="app" class="app">
+    <div id="app" class="app" @mousedown="mousedown" @mouseup="mouseup">
         <h2>身份证号校验</h2>
         <input type="text" v-model="id">
         <div>
@@ -103,86 +103,113 @@
         data: {
             id: '',
             show: '',
+            timeTag: 0,
+            intervalTimer: null
         },
-        methods:{
-            randomCreateId:function(){
-                var vm =this;
+        methods: {
+            randomCreateId: function(real) {
+                var vm = this;
                 var province = '';
                 var city = '';
                 var county = '';
-                var year = 1900 + parseInt(Math.random() * (new Date().getFullYear()-1900));
+                var year = 1900 + parseInt(Math.random() * (new Date().getFullYear() - 1900));
                 var month = parseInt(Math.random() * 13);
-                var day = parseInt(Math.random() * (new Date(year, month, 0).getDate()+1));
+                var day = parseInt(Math.random() * (new Date(year, month, 0).getDate() + 1));
                 var order = parseInt(Math.random() * 100);
                 var sex = parseInt(Math.random() * 10);
                 var num = parseInt(Math.random() * 11);
-    
+
                 var newMap = {};
                 var o = JSON.parse(JSON.stringify(IDCard));
-                for(var i in o){
+                for (var i in o) {
                     var item = o[i];
                     delete item.name;
-                    if(Object.keys(item).length>0){
+                    if (Object.keys(item).length > 0) {
                         newMap[i] = item;
                     }
                 }
                 var provinces = Object.keys(newMap);
-                province = provinces[parseInt(Math.random()*provinces.length)];
+                province = provinces[parseInt(Math.random() * provinces.length)];
                 var citys = Object.keys(newMap[province]);
                 city = citys[parseInt(Math.random() * citys.length)];
                 delete newMap[province][city].name;
                 var countys = Object.keys(newMap[province][city]);
                 county = countys[parseInt(Math.random() * countys.length)];
 
-                month = month<10?'0'+month:month;
-                day = day<10?'0'+day:day;
+                month = month < 10 ? '0' + month : month;
+                day = day < 10 ? '0' + day : day;
                 order = order.toString();
-                order = order.length==1?'0'+order:order;
-                num = num==10?'x':num;
-                console.log(province,city,county,year,month,day,order,sex,num);
-                var id = ''+province+city+county+year+month+day+order+sex+num;
+                order = order.length == 1 ? '0' + order : order;
+                num = num == 10 ? 'x' : num;
+                var num = [province, city, county, year, month, day, order, sex];
+
+                var factor = [7, 9, 10, 5, 8, 4, 2, 1, 6, 3, 7, 9, 10, 5, 8, 4, 2];
+                var factorNum = num.map(function(item, index) {
+                    return item * factor[index]
+                }).reduce(function(v1, v2) { return v1 + v2 });
+                factorNum = factorNum % 11;
+                var factorTag = [1, 0, 'X', 9, 8, 7, 6, 5, 4, 3, 2];
+                if (real) {
+                    // 真实校验码，
+                    num = factorTag[factorNum];
+                } else {
+                    factorTag.splice(factorNum, 1);
+                    num = factorTag[parseInt(Math.random() * factorTag.length)];
+                }
+
+                var id = '' + province + city + county + year + month + day + order + sex + num;
                 vm.id = id;
+            },
+            mousedown: function() {
+                var vm = this;
+                vm.intervalTimer = setInterval(function() {
+                    vm.timeTag += 100;
+                    if (vm.timeTag > 5e3) {
+                        vm.randomCreateId(true);
+                        clearInterval(vm.intervalTimer);
+                    }
+                }, 100);
+            },
+            mouseup: function() {
+                var vm = this;
+                clearInterval(vm.intervalTimer);
+                vm.timeTag = 0;
             }
         },
         watch: {
             id: function(id) {
                 var vm = this;
-                //var pre = id.substr(0, 2);
-                //id = id.substr(2,id.length);
                 var keyA = id.substr(0, 2),
                     keyB = id.substr(2, 2),
                     keyC = id.substr(4, 2),
                     str = '',
-                    a = keyA&&IDCard[keyA],
-                    b = keyB&&a&&a[keyB],
-                    c = keyC&&b&&b[keyC];
-                	a = a&&a.name;
-                	b = b&&b.name;
-                	str = (a+' '+b+' '+c).replace(/undefined/g,'xx');
+                    a = keyA && IDCard[keyA],
+                    b = keyB && a && a[keyB],
+                    c = keyC && b && b[keyC];
+                a = a && a.name;
+                b = b && b.name;
+                str = (a + ' ' + b + ' ' + c).replace(/undefined/g, 'xx');
 
-                	// birthday
-                	var date = ['','',''];
-                	if (id.length>6) {
-                		date[0] = id.substr(6,4);
-                		if (id.length>10) {
-                			date[1] = id.substr(10,2);
-                			if (id.length>12) {
-                				date[2] = id.substr(12,2);
-                			}
-                		}
-                	}
-                	str += date.join(' ');
+                // birthday
+                var date = ['', '', ''];
+                if (id.length > 6) {
+                    date[0] = id.substr(6, 4);
+                    if (id.length > 10) {
+                        date[1] = id.substr(10, 2);
+                        if (id.length > 12) {
+                            date[2] = id.substr(12, 2);
+                        }
+                    }
+                }
+                str += date.join(' ');
 
-                	// sex
-                	var sex = '';
-                	if (id.length>16) {
-                		sex = id.substr(16,1)%2==0?' 女 ':' 男 ';
-                	}
-                	str += sex;
-                    vm.show = str;
-//                     if(pre === 'id'){
-//                 	    vm.show = str;
-//                     }
+                // sex
+                var sex = '';
+                if (id.length > 16) {
+                    sex = id.substr(16, 1) % 2 == 0 ? ' 女 ' : ' 男 ';
+                }
+                str += sex;
+                vm.show = str;
             }
         }
     });
