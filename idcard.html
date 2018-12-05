@@ -116,7 +116,7 @@
                 var order = parseInt(Math.random() * 100);
                 var sex = parseInt(Math.random() * 10);
                 var num = parseInt(Math.random() * 11);
-
+    
                 var newMap = {};
                 var o = JSON.parse(JSON.stringify(IDCard));
                 for(var i in o){
@@ -136,8 +136,9 @@
 
                 order = order.toString();
                 order = order.length==1?'0'+order:order;
-
-                var id = province+city+county+year+month+day+order+sex+num;
+                num = num==10?'x':num;
+                console.log(province,city,county,year,month,day,order,sex,num);
+                var id = ''+province+city+county+year+month+day+order+sex+num;
                 vm.id = id;
             }
         },
