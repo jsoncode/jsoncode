@@ -1,16 +1,16 @@
 ## my github 
 
-[我的github](https://github.com/jsoncode)
+[github首页](https://github.com/jsoncode)
 
-[我的gitpage](https://github.com/jsoncode/jsoncode.github.io)
+[gitpage入门](https://jsoncode.github.io/start-gitpage)
+
+[gitpage 项目](https://github.com/jsoncode/jsoncode.github.io)
 
 [materialDesign](https://jsoncode.github.io/materialDesign)
 
-[flex-ui](https://jsoncode.github.io/flex-ui)
+[移动的css框架flex-ui](https://jsoncode.github.io/flex-ui)
 
-[我的js函数库](https://jsoncode.github.io/javascriptFuction)
-
-[gitpage入门](https://jsoncode.github.io/start-gitpage)
+[js函数库](https://jsoncode.github.io/javascriptFuction)
 
 [html,css,js使用js进行压缩](https://jsoncode.github.io/html-minify)
 
