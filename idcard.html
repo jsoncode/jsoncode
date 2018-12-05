@@ -82,7 +82,7 @@
 </head>
 
 <body>
-    <div id="app" class="app" @mousedown="mousedown" @mouseup="mouseup">
+    <div id="app" class="app" @mousedown="mousedown" @mouseup="mouseup" @touchstart="mousedown" @touchend="mouseup">
         <h2>身份证号校验</h2>
         <input type="text" v-model="id">
         <div>
