@@ -134,6 +134,8 @@
                 var countys = Object.keys(newMap[province][city]);
                 county = countys[parseInt(Math.random() * countys.length)];
 
+                month = month<10?'0'+month:month;
+                day = day<10?'0'+day:day;
                 order = order.toString();
                 order = order.length==1?'0'+order:order;
                 num = num==10?'x':num;
@@ -174,7 +176,6 @@
                 	// sex
                 	var sex = '';
                 	if (id.length>16) {
-                		console.log(id.substr(16,1));
                 		sex = id.substr(16,1)%2==0?' 女 ':' 男 ';
                 	}
                 	str += sex;
