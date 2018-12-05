@@ -14,14 +14,6 @@
 
 [html,css,js使用js进行压缩](https://jsoncode.github.io/html-minify)
 
-[id查询功能](https://jsoncode.github.io/idcard)
+[身份证号校验功能](https://jsoncode.github.io/idcard)
 
 [getUserMedia 开发api](https://jsoncode.github.io/getUserMedia)
-
-
-分割线
-+++
-分割线
-
-+++
-[豫ICP备14012936号-2](http://www.miitbeian.gov.cn)
