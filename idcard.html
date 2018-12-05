@@ -112,12 +112,12 @@
                 var province = '';
                 var city = '';
                 var county = '';
-                var year = 1900 + parseInt(Math.random() * (new Date().getFullYear() - 1900));
-                var month = parseInt(Math.random() * 13);
-                var day = parseInt(Math.random() * (new Date(year, month, 0).getDate() + 1));
-                var order = parseInt(Math.random() * 100);
-                var sex = parseInt(Math.random() * 10);
-                var num = parseInt(Math.random() * 11);
+                var year = (new Date().getFullYear()-120) + parseInt(Math.random() * (new Date().getFullYear() - (new Date().getFullYear()-120)))+1;
+                var month = parseInt(Math.random() * 12)+1;
+                var day = parseInt(Math.random() * (new Date(year, month, 0).getDate()))+1;
+                var order = parseInt(Math.random() * 99)+1;
+                var sex = parseInt(Math.random() * 9)+1;
+                var num = parseInt(Math.random() * 10)+1;
 
                 var newMap = {};
                 var o = JSON.parse(JSON.stringify(IDCard));
