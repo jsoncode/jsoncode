@@ -6,7 +6,7 @@
     <meta name="format-detection" content="telephone=no" />
     <meta name="format-detection" content="email=no" />
     <meta name="viewport" content="initial-scale=1, maximum-scale=3, minimum-scale=1, user-scalable=no">
-    <title>ID查询</title>
+    <title>身份证号校验</title>
     <style>
     html,
     body,
@@ -69,7 +69,7 @@
 
 <body>
     <div id="app" class="app">
-        <h2>ID查询</h2>
+        <h2>身份证号校验</h2>
         <input type="text" v-model="id">
         <div v-text="show" class="content"></div>
         <div class="footer">
@@ -88,8 +88,8 @@
         watch: {
             id: function(id) {
                 var vm = this;
-                var pre = id.substr(0, 2);
-                id = id.substr(2,id.length);
+                //var pre = id.substr(0, 2);
+                //id = id.substr(2,id.length);
                 var keyA = id.substr(0, 2),
                     keyB = id.substr(2, 2),
                     keyC = id.substr(4, 2),
@@ -121,9 +121,10 @@
                 		sex = id.substr(16,1)%2==0?' 女 ':' 男 ';
                 	}
                 	str += sex;
-                    if(pre === 'id'){
-                	    vm.show = str;
-                    }
+                    vm.show = str;
+//                     if(pre === 'id'){
+//                 	    vm.show = str;
+//                     }
             }
         }
     });
