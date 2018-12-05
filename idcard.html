@@ -70,7 +70,7 @@
         .btn-wrap .btn{
             border:0;
             color:#777;
-            width:100%;
+            width:300px;
             height:44px;
             line-height:44px;
             padding:0;
@@ -116,16 +116,29 @@
                 var order = parseInt(Math.random() * 100);
                 var sex = parseInt(Math.random() * 10);
                 var num = parseInt(Math.random() * 11);
-                var provinces = Object.keys(IDCard);
+
+                var newMap = {};
+                var o = JSON.parse(JSON.stringify(IDCard));
+                for(var i in o){
+                    var item = o[i];
+                    delete item.name;
+                    if(Object.keys(item).length>0){
+                        newMap[i] = item;
+                    }
+                }
+                var provinces = Object.keys(newMap);
                 province = provinces[parseInt(Math.random()*provinces.length)];
-                var citys = Object.keys(IDCard[province]);
-                city = citys[parseInt(Math.random()*citys.length)];
-                var countys = Object.keys(IDCard[citys]);
-                county = countys[parseInt(Math.random()*countys.length)];
+                var citys = Object.keys(newMap[province]);
+                city = citys[parseInt(Math.random() * citys.length)];
+                delete newMap[province][city].name;
+                var countys = Object.keys(newMap[province][city]);
+                county = countys[parseInt(Math.random() * countys.length)];
+
                 order = order.toString();
                 order = order.length==1?'0'+order:order;
-                
-                vm.id = province+city+county+year+month+day+order+sex+num;
+
+                var id = province+city+county+year+month+day+order+sex+num;
+                vm.id = id;
             }
         },
         watch: {
