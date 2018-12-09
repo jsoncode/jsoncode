@@ -82,20 +82,20 @@
 </head>
 
 <body>
-    <div id="app" class="app" @mousedown="mousedown" @mouseup="mouseup" @touchstart="mousedown" @touchend="mouseup">
+    <div id="app" class="app" @mousedown="mousedown" @mouseup="mouseup" @touchstart="mousedown" @touchcancel="mouseup" @touchmove="mouseup" @touchend="mouseup">
         <h2>身份证号校验</h2>
         <input type="text" v-model="id">
         <div>
             <div v-text="show" class="content"></div>
             <div class="btn-wrap">
-                <button class="btn" @click="randomCreateId">随机生成一个身份证号</button>
+                <button class="btn" @click="randomCreateId()">随机生成一个身份证号</button>
             </div>
         </div>
         <div class="footer">
             <a href="https://github.com/jsoncode/jsoncode.github.io/issues">问题反馈·bug提交</a>
         </div>
     </div>
-    <script src="//cdn.bootcss.com/vue/2.2.1/vue.min.js"></script>
+    <script src="https://cdn.bootcss.com/vue/2.2.1/vue.min.js"></script>
     <script src="js/IDCard.js"></script>
     <script>
     new Vue({
@@ -144,6 +144,7 @@
                 vm.id = id;
             },
             getLastNum: function(id17, real) {
+                console.log(real);
                 var id = id17.split('').map(function(item) {
                     return item * 1;
                 });
@@ -165,7 +166,7 @@
                 var vm = this;
                 vm.intervalTimer = setInterval(function() {
                     vm.timeTag += 100;
-                    if (vm.timeTag > 5e3) {
+                    if (vm.timeTag > 3e3) {
                         vm.randomCreateId(true);
                         clearInterval(vm.intervalTimer);
                     }
