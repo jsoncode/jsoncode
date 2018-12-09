@@ -117,7 +117,7 @@
                 var day = parseInt(Math.random() * (new Date(year, month, 0).getDate()))+1;
                 var order = parseInt(Math.random() * 99)+1;
                 var sex = parseInt(Math.random() * 9)+1;
-                var num = parseInt(Math.random() * 10)+1;
+                var last = parseInt(Math.random() * 10)+1;
 
                 var newMap = {};
                 var o = JSON.parse(JSON.stringify(IDCard));
@@ -140,7 +140,7 @@
                 day = day < 10 ? '0' + day : day;
                 order = order.toString();
                 order = order.length == 1 ? '0' + order : order;
-                num = num == 10 ? 'x' : num;
+                last = last == 10 ? 'x' : last;
                 var num = [province, city, county, year, month, day, order, sex];
 
                 var factor = [7, 9, 10, 5, 8, 4, 2, 1, 6, 3, 7, 9, 10, 5, 8, 4, 2];
@@ -151,14 +151,27 @@
                 var factorTag = [1, 0, 'X', 9, 8, 7, 6, 5, 4, 3, 2];
                 if (real) {
                     // 真实校验码，
-                    num = factorTag[factorNum];
+                    last = factorTag[factorNum];
                 } else {
                     factorTag.splice(factorNum, 1);
-                    num = factorTag[parseInt(Math.random() * factorTag.length)];
+                    last = factorTag[parseInt(Math.random() * factorTag.length)];
                 }
 
-                var id = '' + province + city + county + year + month + day + order + sex + num;
+                var id = '' + province + city + county + year + month + day + order + sex + last;
                 vm.id = id;
+            },
+            getLastNum:function (id17) {
+                var id = id17.split('').map(function(item) {
+                    return item * 1;
+                });
+                var num = [7, 9, 10, 5, 8, 4, 2, 1, 6, 3, 7, 9, 10, 5, 8, 4, 2];
+                var tag = [1, 0, 'X', 9, 8, 7, 6, 5, 4, 3, 2];
+                var n = 0;
+                num.forEach(function(item, index) {
+                    n += item * id[index];
+                });
+                var lastIdx = n % 11;
+                return '' + tag[lastIdx];
             },
             mousedown: function() {
                 var vm = this;
