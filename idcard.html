@@ -139,7 +139,7 @@
                 order = order.toString();
                 order = order.length == 1 ? '0' + order : order;
                 var id = '' + province + city + county + year + month + day + order + sex;
-                last = getLastNum(id, real);
+                last = vm.getLastNum(id, real);
                 id += last;
                 vm.id = id;
             },
