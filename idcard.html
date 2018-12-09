@@ -112,13 +112,12 @@
                 var province = '';
                 var city = '';
                 var county = '';
-                var year = (new Date().getFullYear()-120) + parseInt(Math.random() * (new Date().getFullYear() - (new Date().getFullYear()-120)))+1;
-                var month = parseInt(Math.random() * 12)+1;
-                var day = parseInt(Math.random() * (new Date(year, month, 0).getDate()))+1;
-                var order = parseInt(Math.random() * 99)+1;
-                var sex = parseInt(Math.random() * 9)+1;
-                var last = parseInt(Math.random() * 10)+1;
-
+                var year = (new Date().getFullYear() - 120) + parseInt(Math.random() * (new Date().getFullYear() - (new Date().getFullYear() - 120))) + 1;
+                var month = parseInt(Math.random() * 12) + 1;
+                var day = parseInt(Math.random() * (new Date(year, month, 0).getDate())) + 1;
+                var order = parseInt(Math.random() * 99) + 1;
+                var sex = parseInt(Math.random() * 9) + 1;
+                var last = '';
                 var newMap = {};
                 var o = JSON.parse(JSON.stringify(IDCard));
                 for (var i in o) {
@@ -135,32 +134,16 @@
                 delete newMap[province][city].name;
                 var countys = Object.keys(newMap[province][city]);
                 county = countys[parseInt(Math.random() * countys.length)];
-
                 month = month < 10 ? '0' + month : month;
                 day = day < 10 ? '0' + day : day;
                 order = order.toString();
                 order = order.length == 1 ? '0' + order : order;
-                last = last == 10 ? 'x' : last;
-                var num = [province, city, county, year, month, day, order, sex];
-
-                var factor = [7, 9, 10, 5, 8, 4, 2, 1, 6, 3, 7, 9, 10, 5, 8, 4, 2];
-                var factorNum = num.map(function(item, index) {
-                    return item * factor[index]
-                }).reduce(function(v1, v2) { return v1 + v2 });
-                factorNum = factorNum % 11;
-                var factorTag = [1, 0, 'X', 9, 8, 7, 6, 5, 4, 3, 2];
-                if (real) {
-                    // 真实校验码，
-                    last = factorTag[factorNum];
-                } else {
-                    factorTag.splice(factorNum, 1);
-                    last = factorTag[parseInt(Math.random() * factorTag.length)];
-                }
-
-                var id = '' + province + city + county + year + month + day + order + sex + last;
+                var id = '' + province + city + county + year + month + day + order + sex;
+                last = getLastNum(id, real);
+                id += last;
                 vm.id = id;
             },
-            getLastNum:function (id17) {
+            getLastNum: function(id17, real) {
                 var id = id17.split('').map(function(item) {
                     return item * 1;
                 });
@@ -170,7 +153,12 @@
                 num.forEach(function(item, index) {
                     n += item * id[index];
                 });
-                var lastIdx = n % 11;
+                var lastIdx = '';
+                lastIdx = n % 11;
+                if (real == undefined || !real) {
+                    tag.splice(lastIdx, 1);
+                    lastIdx = parseInt(Math.random() * tag.length);
+                }
                 return '' + tag[lastIdx];
             },
             mousedown: function() {
@@ -202,7 +190,6 @@
                 a = a && a.name;
                 b = b && b.name;
                 str = (a + ' ' + b + ' ' + c).replace(/undefined/g, 'xx');
-
                 // birthday
                 var date = ['', '', ''];
                 if (id.length > 6) {
@@ -215,7 +202,6 @@
                     }
                 }
                 str += date.join(' ');
-
                 // sex
                 var sex = '';
                 if (id.length > 16) {
