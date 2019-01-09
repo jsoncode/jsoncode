@@ -141,7 +141,7 @@
                 var id = '' + province + city + county + year + month + day + order + sex;
                 last = vm.getLastNum(id, real);
                 id += last;
-                vm.id = id;
+                vm.id = id.replace(/-旧号/g, '');
             },
             getLastNum: function(id17, real) {
                 console.log(real);
