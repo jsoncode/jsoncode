@@ -190,7 +190,7 @@
                     c = keyC && b && b[keyC];
                 a = a && a.name;
                 b = b && b.name;
-                str = (a + ' ' + b + ' ' + c).replace(/undefined/g, 'xx');
+                str = (a + ' ' + b + ' ' + c).replace(/undefined/g, 'xx').replace(/-旧号/g, '');
                 // birthday
                 var date = ['', '', ''];
                 if (id.length > 6) {
