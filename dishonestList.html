@@ -25,8 +25,9 @@
         background-color: #f0f0f0;
         padding-top: 100px;
     }
-    .loaded{
-    	display: none;
+
+    .loaded {
+        display: none;
     }
     </style>
 </head>
@@ -86,8 +87,8 @@
             Loading...
         </div>
     </div>
-    <div class="container-fluid my-3">
-        <table class="table table-bordered table-sm" style="display: none;"></table>
+    <div class="container-fluid my-3 loaded">
+        <table class="table table-bordered table-sm"></table>
     </div>
     <script src="https://jsoncode.github.io/js/IDCard.js"></script>
     <script src="https://echarts.baidu.com/gallery/vendors/echarts/echarts.min.js"></script>
@@ -500,23 +501,22 @@
                 return option;
                 // /
             });
-            if (!isMobile) {
 
-                userdata.unshift({
-                    "check_flag": "执行方式",
-                    "flag2": "处罚原因",
-                    "passenger_id_no": "证件号码",
-                    "passenger_id_type": "乘客身份类型，1大陆普通乘客，2,B,E,Q,6",
-                    "passenger_name": "姓名",
-                    "start_date": "日期",
-                    "shift": "班次",
-                    "province": "省份",
-                    "city": "市",
-                    "county": "县/镇",
-                    "sex": "性别"
-                });
-                userdata = userdata.map(function(item, index) {
-                    return `<tr>
+            userdata.unshift({
+                "check_flag": "执行方式",
+                "flag2": "处罚原因",
+                "passenger_id_no": "证件号码",
+                "passenger_id_type": "乘客身份类型，1大陆普通乘客，2,B,E,Q,6",
+                "passenger_name": "姓名",
+                "start_date": "日期",
+                "shift": "班次",
+                "province": "省份",
+                "city": "市",
+                "county": "县/镇",
+                "sex": "性别"
+            });
+            userdata = userdata.map(function(item, index) {
+                return `<tr>
                     <td>${index==0?'编号':index}</td>
                     <td>${item.passenger_name}</td>
                     <td>${item.start_date}</td>
@@ -529,12 +529,13 @@
                     <td>${item.flag2}</td>
                     <td>${item.shift}</td>
                 </tr>`;
-                }).join('');
+            }).join('');
+            document.getElementById('exportExcelBtn').addEventListener('click', function() {
+                exportExcel(userdata, '12306失信人名单');
+            })
+            if (!isMobile) {
                 document.querySelector('table').innerHTML = userdata;
             }
-            document.getElementById('exportExcelBtn').addEventListener('click', function() {
-                exportExcel(document.querySelector('table').innerHTML, '12306失信人名单');
-            })
         }
     }, false);
     xhr.send();
