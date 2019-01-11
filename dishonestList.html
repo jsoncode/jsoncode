@@ -99,11 +99,6 @@
     <script src="https://echarts.baidu.com/gallery/vendors/echarts/map/js/china.js"></script>
     <script>
     var isMobile = /mobile/i.test(navigator.userAgent);
-    if (isMobile) {
-        [].slice.call(document.querySelectorAll('.chart-item')).forEach(function(item) {
-            item.style.display = 'none';
-        })
-    }
     var xhr = new XMLHttpRequest();
     xhr.open('GET', 'https://www.12306.cn/index/otn/queryDishonest/query', true);
     xhr.addEventListener('loadend', function() {
@@ -162,371 +157,369 @@
 
 
             document.getElementById('allcount').innerText = userdata.length;
-            if (!isMobile) {
-                createChart('chart-week', function() {
-                    var data = [0, 0, 0, 0, 0, 0, 0];
-                    userdata.forEach(function(item) {
-                        var week = new Date(item.start_date).getDay() - 1;
-                        data[week] += 1;
-                    });
-                    return {
-                        title: {
-                            text: '失信人乘车规律-周',
-                            // subtext: '纯属虚构',
-                            x: 'center'
-                        },
-                        toolbox: {
-                            show: true,
-                            left: 'right',
-                            top: 0,
-                            feature: {
-                                saveAsImage: {}
-                            }
-                        },
-                        xAxis: {
-                            type: 'category',
-                            boundaryGap: false,
-                            data: ['周一', '周二', '周三', '周四', '周五', '周六', '周日']
-                        },
-                        yAxis: {
-                            type: 'value',
-                            boundaryGap: false,
-                        },
-                        grid: {
-                            left: '3%',
-                            right: '4%',
-                            bottom: '3%',
-                            containLabel: true
-                        },
-                        tooltip: {
-                            trigger: 'axis',
-                            // axisPointer: {
-                            //     type: 'cross',
-                            //     label: {
-                            //         backgroundColor: '#6a7985'
-                            //     }
-                            // }
-                        },
-                        series: [{
-                            data: data,
-                            type: 'line',
-                            label: {
-                                normal: {
-                                    show: true,
-                                    position: 'top'
-                                }
-                            },
-                            smooth: true, //是否平滑过渡
-                        }]
-                    };
+            createChart('chart-week', function() {
+                var data = [0, 0, 0, 0, 0, 0, 0];
+                userdata.forEach(function(item) {
+                    var week = new Date(item.start_date).getDay() - 1;
+                    data[week] += 1;
                 });
-                createChart('chart-year', function() {
-                    var obj = {};
-                    var data = [];
-                    userdata.forEach(function(item) {
-                        var time = item.start_date.substr(0, 7);
-                        if (obj[time] === undefined) {
-                            obj[time] = 1;
-                        } else {
-                            obj[time] += 1;
+                return {
+                    title: {
+                        text: '失信人乘车规律-周',
+                        // subtext: '纯属虚构',
+                        x: 'center'
+                    },
+                    toolbox: {
+                        show: true,
+                        left: 'right',
+                        top: 0,
+                        feature: {
+                            saveAsImage: {}
                         }
-                    });
-                    for (var i in obj) {
-                        if (obj.hasOwnProperty(i)) {
-                            data.push({
-                                time: i,
-                                value: obj[i]
-                            })
-                        }
-                    }
-                    data = data.sort(function(v1, v2) {
-                        return new Date(v1.time) - new Date(v2.time) > 0 ? 1 : -1;
-                    })
-
-                    var times = data.map(function(item) {
-                        return item.time.replace(/^20/, '');
-                    })
-                    var values = data.map(function(item) {
-                        return item.value;
-                    })
-                    return {
-                        title: {
-                            text: '失信人乘车规律-月',
-                            // subtext: '纯属虚构',
-                            x: 'center'
-                        },
-                        toolbox: {
-                            show: true,
-                            left: 'right',
-                            top: 0,
-                            feature: {
-                                saveAsImage: {}
+                    },
+                    xAxis: {
+                        type: 'category',
+                        boundaryGap: false,
+                        data: ['周一', '周二', '周三', '周四', '周五', '周六', '周日']
+                    },
+                    yAxis: {
+                        type: 'value',
+                        boundaryGap: false,
+                    },
+                    grid: {
+                        left: '3%',
+                        right: '4%',
+                        bottom: '3%',
+                        containLabel: true
+                    },
+                    tooltip: {
+                        trigger: 'axis',
+                        // axisPointer: {
+                        //     type: 'cross',
+                        //     label: {
+                        //         backgroundColor: '#6a7985'
+                        //     }
+                        // }
+                    },
+                    series: [{
+                        data: data,
+                        type: 'line',
+                        label: {
+                            normal: {
+                                show: true,
+                                position: 'top'
                             }
                         },
-                        xAxis: {
-                            type: 'category',
-                            boundaryGap: false,
-                            data: times
-                        },
-                        tooltip: {
-                            trigger: 'axis',
-                            // axisPointer: {
-                            //     type: 'cross',
-                            //     label: {
-                            //         backgroundColor: '#6a7985'
-                            //     }
-                            // }
-                        },
-                        yAxis: {
-                            boundaryGap: false,
-                            type: 'value'
-                        },
-                        series: [{
-                            data: values,
-                            type: 'line',
-                            label: {
-                                normal: {
-                                    show: true,
-                                    position: 'top'
-                                }
-                            },
-                            smooth: true, //是否平滑过渡
-                        }]
-                    };
-                });
-                createChart('chart-type', function() {
-                    var obj = {};
-                    var data = [];
-                    userdata.forEach(function(item) {
-                        var type = item.flag2;
-                        if (obj[type] === undefined) {
-                            obj[type] = 1;
-                        } else {
-                            obj[type] += 1;
-                        }
-                    });
-                    for (var i in obj) {
-                        if (obj.hasOwnProperty(i)) {
-                            data.push({
-                                name: i,
-                                value: obj[i]
-                            })
-                        }
-                    }
-
-                    data = data.sort(function(v1, v2) {
-                        return new Date(v1.value) - new Date(v2.value) < 0 ? 1 : -1;
-                    })
-                    var names = data.map(function(item) {
-                        return item.name;
-                    })
-                    return {
-                        title: {
-                            text: '失信人违规类型',
-                            // subtext: '纯属虚构',
-                            x: 'center'
-                        },
-                        toolbox: {
-                            show: true,
-                            feature: {
-                                saveAsImage: {}
-                            }
-                        },
-                        tooltip: {
-                            trigger: 'item',
-                            formatter: "{a} <br/>{b} : {c} ({d}%)"
-                        },
-                        legend: {
-                            orient: 'vertical',
-                            left: 'left',
-                            data: names
-                        },
-                        series: [{
-                            name: '失信人违规类型',
-                            type: 'pie',
-                            radius: '55%',
-                            center: ['50%', '60%'],
-                            data: data,
-                            label: {
-                                normal: {
-                                    formatter: '{b}  {d}%  ',
-                                }
-                            },
-                            itemStyle: {
-                                emphasis: {
-                                    shadowBlur: 10,
-                                    shadowOffsetX: 0,
-                                    shadowColor: 'rgba(0, 0, 0, 0.5)'
-                                }
-                            }
-                        }]
-                    };
-                });
-                createChart('chart-sex', function() {
-                    var obj = {};
-                    var data = [];
-                    userdata.forEach(function(item) {
-                        var type = item.sex.trim();
-                        if (obj[type] === undefined) {
-                            obj[type] = 1;
-                        } else {
-                            obj[type] += 1;
-                        }
-                    });
-                    for (var i in obj) {
-                        if (obj.hasOwnProperty(i)) {
-                            data.push({
-                                name: i || '未知',
-                                value: obj[i]
-                            })
-                        }
-                    }
-
-                    data = data.sort(function(v1, v2) {
-                        return new Date(v1.value) - new Date(v2.value) < 0 ? 1 : -1;
-                    });
-                    var names = data.map(function(item) {
-                        return item.name;
-                    })
-                    return {
-                        toolbox: {
-                            show: true,
-                            feature: {
-                                saveAsImage: {}
-                            }
-                        },
-                        title: {
-                            text: '失信人性别比例',
-                            // subtext: '纯属虚构',
-                            x: 'center'
-                        },
-                        tooltip: {
-                            trigger: 'item',
-                            formatter: "{a} <br/>{b} : {c} ({d}%)"
-                        },
-                        legend: {
-                            orient: 'vertical',
-                            left: 'left',
-                            data: names
-                        },
-                        series: [{
-                            name: '性别比例',
-                            type: 'pie',
-                            radius: '55%',
-                            center: ['50%', '60%'],
-                            data: data,
-                            label: {
-                                normal: {
-                                    formatter: '{b}  {d}%  ',
-                                }
-                            },
-                            itemStyle: {
-                                emphasis: {
-                                    shadowBlur: 10,
-                                    shadowOffsetX: 0,
-                                    shadowColor: 'rgba(0, 0, 0, 0.5)'
-                                }
-                            }
-                        }]
-                    };
-                });
-                createChart('chart-city', function() {
-                    var data = [];
-                    var obj = {};
-                    userdata.forEach(function(item) {
-                        if (obj[item.province] === undefined) {
-                            obj[item.province] = 1;
-                        } else {
-                            obj[item.province] += 1;
-                        }
-                    });
-                    for (var i in obj) {
-                        if (obj.hasOwnProperty(i)) {
-                            var name = i.replace(/(省|市|(壮族|维吾尔|回族)?自治区)$/, '');
-                            var value = obj[i];
-                            data.push({
-                                name: name,
-                                value: value
-                            })
-                        }
-                    }
-                    var minValue = Math.min.apply(null, data.map(function(item) {
-                        return item.value;
-                    }));
-                    var maxValue = Math.max.apply(null, data.map(function(item) {
-                        return item.value;
-                    }));
-                    var option = {
-                        title: {
-                            text: '失信人户籍地',
-                        },
-                        tooltip: {
-                            trigger: 'item',
-                            formatter: function(params) {
-                                return params.name + (isNaN(params.value) ? 0 : params.value) + '人';
-                            }
-                        },
-                        toolbox: {
-                            show: true,
-                            left: 'right',
-                            top: 0,
-                            feature: {
-                                saveAsImage: {}
-                            }
-                        },
-                        visualMap: {
-                            min: minValue,
-                            max: maxValue,
-                            text: ['High', 'Low'],
-                            realtime: false,
-                            calculable: true,
-                            inRange: {
-                                color: ['lightskyblue', 'yellow', 'orangered']
-                            }
-                        },
-                        series: [{
-                            name: '失信人户籍地',
-                            type: 'map',
-                            mapType: 'china',
-                            //hoverable: false,
-                            roam: false,
-                            label: {
-                                normal: {
-                                    formatter: function(params) {
-                                        return params.name + (isNaN(params.value) ? 0 : params.value) + '人';
-                                    },
-                                }
-                            },
-                            itemStyle: {
-                                normal: { label: { show: true } },
-                                emphasis: { label: { show: false } }
-                            },
-                            data: data,
-                        }],
-                        animation: false
-
-                    };
-                    return option;
-                    // /
-                });
-            }
-
-
-            userdata.unshift({
-                "check_flag": "执行方式",
-                "flag2": "处罚原因",
-                "passenger_id_no": "证件号码",
-                "passenger_id_type": "乘客身份类型，1大陆普通乘客，2,B,E,Q,6",
-                "passenger_name": "姓名",
-                "start_date": "日期",
-                "shift": "班次",
-                "province": "省份",
-                "city": "市",
-                "county": "县/镇",
-                "sex": "性别"
+                        smooth: true, //是否平滑过渡
+                    }]
+                };
             });
-            userdata = userdata.map(function(item, index) {
-                return `<tr>
+            createChart('chart-year', function() {
+                var obj = {};
+                var data = [];
+                userdata.forEach(function(item) {
+                    var time = item.start_date.substr(0, 7);
+                    if (obj[time] === undefined) {
+                        obj[time] = 1;
+                    } else {
+                        obj[time] += 1;
+                    }
+                });
+                for (var i in obj) {
+                    if (obj.hasOwnProperty(i)) {
+                        data.push({
+                            time: i,
+                            value: obj[i]
+                        })
+                    }
+                }
+                data = data.sort(function(v1, v2) {
+                    return new Date(v1.time) - new Date(v2.time) > 0 ? 1 : -1;
+                })
+
+                var times = data.map(function(item) {
+                    return item.time.replace(/^20/, '');
+                })
+                var values = data.map(function(item) {
+                    return item.value;
+                })
+                return {
+                    title: {
+                        text: '失信人乘车规律-月',
+                        // subtext: '纯属虚构',
+                        x: 'center'
+                    },
+                    toolbox: {
+                        show: true,
+                        left: 'right',
+                        top: 0,
+                        feature: {
+                            saveAsImage: {}
+                        }
+                    },
+                    xAxis: {
+                        type: 'category',
+                        boundaryGap: false,
+                        data: times
+                    },
+                    tooltip: {
+                        trigger: 'axis',
+                        // axisPointer: {
+                        //     type: 'cross',
+                        //     label: {
+                        //         backgroundColor: '#6a7985'
+                        //     }
+                        // }
+                    },
+                    yAxis: {
+                        boundaryGap: false,
+                        type: 'value'
+                    },
+                    series: [{
+                        data: values,
+                        type: 'line',
+                        label: {
+                            normal: {
+                                show: true,
+                                position: 'top'
+                            }
+                        },
+                        smooth: true, //是否平滑过渡
+                    }]
+                };
+            });
+            createChart('chart-type', function() {
+                var obj = {};
+                var data = [];
+                userdata.forEach(function(item) {
+                    var type = item.flag2;
+                    if (obj[type] === undefined) {
+                        obj[type] = 1;
+                    } else {
+                        obj[type] += 1;
+                    }
+                });
+                for (var i in obj) {
+                    if (obj.hasOwnProperty(i)) {
+                        data.push({
+                            name: i,
+                            value: obj[i]
+                        })
+                    }
+                }
+
+                data = data.sort(function(v1, v2) {
+                    return new Date(v1.value) - new Date(v2.value) < 0 ? 1 : -1;
+                })
+                var names = data.map(function(item) {
+                    return item.name;
+                })
+                return {
+                    title: {
+                        text: '失信人违规类型',
+                        // subtext: '纯属虚构',
+                        x: 'center'
+                    },
+                    toolbox: {
+                        show: true,
+                        feature: {
+                            saveAsImage: {}
+                        }
+                    },
+                    tooltip: {
+                        trigger: 'item',
+                        formatter: "{a} <br/>{b} : {c} ({d}%)"
+                    },
+                    legend: {
+                        orient: 'vertical',
+                        left: 'left',
+                        data: names
+                    },
+                    series: [{
+                        name: '失信人违规类型',
+                        type: 'pie',
+                        radius: '55%',
+                        center: ['50%', '60%'],
+                        data: data,
+                        label: {
+                            normal: {
+                                formatter: '{b}  {d}%  ',
+                            }
+                        },
+                        itemStyle: {
+                            emphasis: {
+                                shadowBlur: 10,
+                                shadowOffsetX: 0,
+                                shadowColor: 'rgba(0, 0, 0, 0.5)'
+                            }
+                        }
+                    }]
+                };
+            });
+            createChart('chart-sex', function() {
+                var obj = {};
+                var data = [];
+                userdata.forEach(function(item) {
+                    var type = item.sex.trim();
+                    if (obj[type] === undefined) {
+                        obj[type] = 1;
+                    } else {
+                        obj[type] += 1;
+                    }
+                });
+                for (var i in obj) {
+                    if (obj.hasOwnProperty(i)) {
+                        data.push({
+                            name: i || '未知',
+                            value: obj[i]
+                        })
+                    }
+                }
+
+                data = data.sort(function(v1, v2) {
+                    return new Date(v1.value) - new Date(v2.value) < 0 ? 1 : -1;
+                });
+                var names = data.map(function(item) {
+                    return item.name;
+                })
+                return {
+                    toolbox: {
+                        show: true,
+                        feature: {
+                            saveAsImage: {}
+                        }
+                    },
+                    title: {
+                        text: '失信人性别比例',
+                        // subtext: '纯属虚构',
+                        x: 'center'
+                    },
+                    tooltip: {
+                        trigger: 'item',
+                        formatter: "{a} <br/>{b} : {c} ({d}%)"
+                    },
+                    legend: {
+                        orient: 'vertical',
+                        left: 'left',
+                        data: names
+                    },
+                    series: [{
+                        name: '性别比例',
+                        type: 'pie',
+                        radius: '55%',
+                        center: ['50%', '60%'],
+                        data: data,
+                        label: {
+                            normal: {
+                                formatter: '{b}  {d}%  ',
+                            }
+                        },
+                        itemStyle: {
+                            emphasis: {
+                                shadowBlur: 10,
+                                shadowOffsetX: 0,
+                                shadowColor: 'rgba(0, 0, 0, 0.5)'
+                            }
+                        }
+                    }]
+                };
+            });
+            createChart('chart-city', function() {
+                var data = [];
+                var obj = {};
+                userdata.forEach(function(item) {
+                    if (obj[item.province] === undefined) {
+                        obj[item.province] = 1;
+                    } else {
+                        obj[item.province] += 1;
+                    }
+                });
+                for (var i in obj) {
+                    if (obj.hasOwnProperty(i)) {
+                        var name = i.replace(/(省|市|(壮族|维吾尔|回族)?自治区)$/, '');
+                        var value = obj[i];
+                        data.push({
+                            name: name,
+                            value: value
+                        })
+                    }
+                }
+                var minValue = Math.min.apply(null, data.map(function(item) {
+                    return item.value;
+                }));
+                var maxValue = Math.max.apply(null, data.map(function(item) {
+                    return item.value;
+                }));
+                var option = {
+                    title: {
+                        text: '失信人户籍地',
+                    },
+                    tooltip: {
+                        trigger: 'item',
+                        formatter: function(params) {
+                            return params.name + (isNaN(params.value) ? 0 : params.value) + '人';
+                        }
+                    },
+                    toolbox: {
+                        show: true,
+                        left: 'right',
+                        top: 0,
+                        feature: {
+                            saveAsImage: {}
+                        }
+                    },
+                    visualMap: {
+                        min: minValue,
+                        max: maxValue,
+                        text: ['High', 'Low'],
+                        realtime: false,
+                        calculable: true,
+                        inRange: {
+                            color: ['lightskyblue', 'yellow', 'orangered']
+                        }
+                    },
+                    series: [{
+                        name: '失信人户籍地',
+                        type: 'map',
+                        mapType: 'china',
+                        //hoverable: false,
+                        roam: false,
+                        label: {
+                            normal: {
+                                formatter: function(params) {
+                                    return params.name + (isNaN(params.value) ? 0 : params.value) + '人';
+                                },
+                            }
+                        },
+                        itemStyle: {
+                            normal: { label: { show: true } },
+                            emphasis: { label: { show: false } }
+                        },
+                        data: data,
+                    }],
+                    animation: false
+
+                };
+                return option;
+                // /
+            });
+            if (!isMobile) {
+
+                userdata.unshift({
+                    "check_flag": "执行方式",
+                    "flag2": "处罚原因",
+                    "passenger_id_no": "证件号码",
+                    "passenger_id_type": "乘客身份类型，1大陆普通乘客，2,B,E,Q,6",
+                    "passenger_name": "姓名",
+                    "start_date": "日期",
+                    "shift": "班次",
+                    "province": "省份",
+                    "city": "市",
+                    "county": "县/镇",
+                    "sex": "性别"
+                });
+                userdata = userdata.map(function(item, index) {
+                    return `<tr>
                     <td>${index==0?'编号':index}</td>
                     <td>${item.passenger_name}</td>
                     <td>${item.start_date}</td>
@@ -539,13 +532,12 @@
                     <td>${item.flag2}</td>
                     <td>${item.shift}</td>
                 </tr>`;
-            }).join('');
-            document.querySelector('table').innerHTML = userdata;
-
+                }).join('');
+                document.querySelector('table').innerHTML = userdata;
+            }
             document.getElementById('exportExcelBtn').addEventListener('click', function() {
                 exportExcel(document.querySelector('table').innerHTML, '12306失信人名单');
             })
-
         }
     }, false);
     xhr.send();
@@ -561,12 +553,10 @@
     }
 
     function createChart(selector, option) {
-        if (!isMobile) {
-            option = typeof option === 'function' ? option() : option;
-            var dom = document.getElementById(selector);
-            var myChart = echarts.init(dom);
-            myChart.setOption(option);
-        }
+        option = typeof option === 'function' ? option() : option;
+        var dom = document.getElementById(selector);
+        var myChart = echarts.init(dom);
+        myChart.setOption(option);
     }
     </script>
 </body>
