@@ -23,57 +23,35 @@
         width: 100%;
         padding: 1rem;
         background-color: #f0f0f0;
-        /*display: none;*/
         padding-top: 100px;
+    }
+    .loaded{
+    	display: none;
     }
     </style>
 </head>
 
 <body class="defaultbg">
-    <nav class="navbar navbar-expand-lg navbar-dark bg-primary sticky-top">
-        <a class="navbar-brand text-light">铁路旅客运输领域严重失信人信息公开网-可视化平台</a>
-        <div class="collapse navbar-collapse" id="navbarText">
-            <ul class="navbar-nav mr-auto">
-                <li class="nav-item">
-                    <a class="nav-link text-light" href="#chart-week">周试图</a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link text-light" href="#chart-year">月试图</a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link text-light" href="#chart-sex">性别</a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link text-light" href="#chart-type">类型</a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link text-light" href="#chart-city">籍贯</a>
-                </li>
-            </ul>
-            <ul class="navbar-nav">
-                <li class="nav-item">
-                    <a class="nav-link text-light" href="javascript:void(0);" id="exportExcelBtn">导出表格</a>
-                </li>
-            </ul>
+    <div class="media p-3 bg-primary text-light sticky-top">
+        <div class="media-body d-flex">
+            <a class="nav-link text-light" href="#chart-week">周试图</a>
+            <a class="nav-link text-light" href="#chart-year">月试图</a>
+            <a class="nav-link text-light" href="#chart-sex">性别</a>
+            <a class="nav-link text-light" href="#chart-type">类型</a>
+            <a class="nav-link text-light" href="#chart-city">籍贯</a>
+        </div>
+        <div class="media-body d-flex justify-content-end">
+            <a class="nav-link text-light" href="javascript:void(0);" id="exportExcelBtn">导出表格</a>
             <span class="navbar-text text-light">
                 总人数：<span id="allcount"></span>人
             </span>
         </div>
-    </nav>
+    </div>
+    <div class="alert alert-primary h5">
+        铁路旅客运输领域严重失信人信息公开网-可视化平台
+    </div>
     <div class="container-fluid">
-        <div class="p-3">
-            实时数据 来源：<a href="https://dynamic.12306.cn/otn/queryDishonest/init" target="_blank">https://dynamic.12306.cn/otn/queryDishonest/init</a>
-        </div>
-        <div class="p-3">
-            参考资料：
-        </div>
-        <div class="p-3">
-            <a href="http://www.ccb.com/cn/OtherResource/bankroll/html/code_help.html" target="_blank">城市编码：http://www.ccb.com/cn/OtherResource/bankroll/html/code_help.html</a>
-        </div>
-        <div class="p-3">
-            <a href="https://jingyan.baidu.com/article/72ee561abd962fe16038df48.html" target="_blank">身份证规则：https://jingyan.baidu.com/article/72ee561abd962fe16038df48.html</a>
-        </div>
-        <div class="row">
+        <div class="row loaded">
             <div class="col-sm-12 p-2">
                 <div class="chart-item" id="chart-week"></div>
             </div>
@@ -87,12 +65,29 @@
                 <div class="chart-item" style="height: 800px" id="chart-type"></div>
             </div>
             <div class="col-sm-12 p-2">
-                <div class="chart-item" id="chart-city" style="display: block;height: 1200px;"></div>
+                <div class="chart-item" id="chart-city" style="height: 1200px;"></div>
             </div>
+            <div>
+                <div class="p-3">
+                    实时数据 来源：<a href="https://dynamic.12306.cn/otn/queryDishonest/init" target="_blank">https://dynamic.12306.cn/otn/queryDishonest/init</a>
+                </div>
+                <div class="p-3">
+                    参考资料：
+                </div>
+                <div class="p-3">
+                    <a href="http://www.ccb.com/cn/OtherResource/bankroll/html/code_help.html" target="_blank">城市编码：http://www.ccb.com/cn/OtherResource/bankroll/html/code_help.html</a>
+                </div>
+                <div class="p-3">
+                    <a href="https://jingyan.baidu.com/article/72ee561abd962fe16038df48.html" target="_blank">身份证规则：https://jingyan.baidu.com/article/72ee561abd962fe16038df48.html</a>
+                </div>
+            </div>
+        </div>
+        <div class="loading p-5 text-center h3">
+            Loading...
         </div>
     </div>
     <div class="container-fluid my-3">
-        <table class="table table-bordered table-sm"></table>
+        <table class="table table-bordered table-sm" style="display: none;"></table>
     </div>
     <script src="https://jsoncode.github.io/js/IDCard.js"></script>
     <script src="https://echarts.baidu.com/gallery/vendors/echarts/echarts.min.js"></script>
@@ -103,6 +98,8 @@
     xhr.open('GET', 'https://www.12306.cn/index/otn/queryDishonest/query', true);
     xhr.addEventListener('loadend', function() {
         if ((xhr.status >= 200 && xhr.status < 300) || xhr.status === 304) {
+            document.querySelector('.loading').style.display = 'none';
+            document.querySelector('.loaded').style.display = 'block';
             var ajaxdata = JSON.parse(xhr.responseText);
             //处理身份证
             var usernames = ajaxdata.data.left.concat(ajaxdata.data.right);
