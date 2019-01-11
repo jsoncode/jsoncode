@@ -26,12 +26,6 @@
         /*display: none;*/
         padding-top: 100px;
     }
-        @media(max-width:1200px){
-            #chart-week,
-            #chart-year,
-            #chart-sex,
-            #chart-type{display:none;}
-        }
     </style>
 </head>
 
@@ -104,6 +98,12 @@
     <script src="https://echarts.baidu.com/gallery/vendors/echarts/echarts.min.js"></script>
     <script src="https://echarts.baidu.com/gallery/vendors/echarts/map/js/china.js"></script>
     <script>
+    var isMobile = /mobile/.test(navigator.userAgent);
+    if (isMobile) {
+        [].slice.call(document.querySelectorAll('.chart-item')).forEach(function(item) {
+            item.style.display = 'none';
+        })
+    }
     var xhr = new XMLHttpRequest();
     xhr.open('GET', 'https://www.12306.cn/index/otn/queryDishonest/query', true);
     xhr.addEventListener('loadend', function() {
@@ -561,10 +561,12 @@
     }
 
     function createChart(selector, option) {
-        option = typeof option === 'function' ? option() : option;
-        var dom = document.getElementById(selector);
-        var myChart = echarts.init(dom);
-        myChart.setOption(option);
+        if (!isMobile) {
+            option = typeof option === 'function' ? option() : option;
+            var dom = document.getElementById(selector);
+            var myChart = echarts.init(dom);
+            myChart.setOption(option);
+        }
     }
     </script>
 </body>
