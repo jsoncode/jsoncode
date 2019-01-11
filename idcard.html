@@ -141,7 +141,7 @@
                 var id = '' + province + city + county + year + month + day + order + sex;
                 last = vm.getLastNum(id, real);
                 id += last;
-                vm.id = id.replace(/-旧号/g, '');
+                vm.id = id;
             },
             getLastNum: function(id17, real) {
                 console.log(real);
@@ -190,7 +190,7 @@
                     c = keyC && b && b[keyC];
                 a = a && a.name;
                 b = b && b.name;
-                str = (a + ' ' + b + ' ' + c).replace(/undefined/g, 'xx').replace(/-旧号/g, '');
+                str = (a + ' ' + b + ' ' + c).replace(/undefined/g, 'xx');
                 // birthday
                 var date = ['', '', ''];
                 if (id.length > 6) {
