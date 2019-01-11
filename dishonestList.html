@@ -126,9 +126,6 @@
                     b = b && b.name;
                     item.province = a ? a : '';
                     item.city = b ? b : '';
-                    if (item.city === '县') {
-                        item.city = '';
-                    }
                     item.county = c ? c : '';
                     if (no[1]) {
                         var sex = no[1].substr(2, 1) % 2 == 0 ? ' 女 ' : ' 男 ';
