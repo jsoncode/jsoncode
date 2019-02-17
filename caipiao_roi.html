@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="utf-8">
+    <title>彩票投资回报率计算器</title>
+    <meta name="viewport" content="width=device-width,initial-scale=1,user-scalable=no">
+    <style>
+    body {
+        font-size: 14px;
+        color: #666;
+        line-height: 1.5;
+        margin: 0;
+        padding: 1rem;
+    }
+
+    button,
+    .form input {
+        margin-bottom: 1rem;
+        width: 100%;
+        height: 40px;
+        padding: 4px 1rem;
+    }
+
+    * {
+        box-sizing: border-box;
+    }
+
+    table {
+        width: 100%;
+        font-size: 12px;
+        border-collapse: collapse;
+    }
+
+    table th,
+    table td {
+        border: 1px solid #ddd;
+        padding: .3rem;
+    }
+
+    tbody tr:hover {
+        background-color: #eee;
+    }
+
+    table tr.max-value {
+        background-color: #53964e;
+        color: #fff;
+    }
+
+    table tr.min-value {
+        background-color: #ff8e75;
+        color: #fff;
+    }
+    </style>
+</head>
+
+<body>
+    <div class="form">
+        <div>
+            <div class="">单注投入金额</div>
+            <input class="num_0">
+        </div>
+        <div>
+            <div class="">单注奖金金额</div>
+            <input class="num_1">
+        </div>
+        <div>
+            <div class="">连续跟投次数</div>
+            <input class="num_2">
+        </div>
+        <div>
+            <div class="">每多少次增长倍数</div>
+            <input class="num_3">
+        </div>
+        <div>
+            <div class="">每多少次增长多少倍数</div>
+            <input class="num_4">
+        </div>
+        <div>
+            <button onclick="formChange()">确定</button>
+        </div>
+    </div>
+    <table>
+        <thead>
+            <tr>
+                <th>次数</th>
+                <th>本次金额</th>
+                <th>投入倍数</th>
+                <th>单次奖金</th>
+                <th>总计投入金额</th>
+                <th>剩余金额</th>
+            </tr>
+        </thead>
+        <tbody>
+        </tbody>
+    </table>
+    <script>
+    var nums = ['2', '200', '50', '5', '1'];
+    nums.forEach(function(item, index) {
+        document.querySelector('.num_' + index).addEventListener('change', function(event) {
+            nums[index] = event.target.value;
+        });
+    });
+    formChange();
+
+    function formChange() {
+        var checknums = nums.filter(function(item, index) {
+            document.querySelector('.num_' + index).value = item;
+            return item != '' && !isNaN(item)
+        }).length == nums.length;
+
+        if (checknums) {
+            var html = getTable();
+            document.querySelector('tbody').innerHTML = html;
+        }
+    }
+
+    function getTable() {
+        var html = '';
+        var list = [];
+        var sum = 0;
+        var max = '';
+        var min = '';
+        for (var i = 0; i < nums[2] * 1; i++) {
+            var obj = {};
+            // var scale = (parseInt(i / nums[3]) + 1);
+            // obj[0] = i + 1;
+            // obj[1] = nums[0] * scale;
+            // sum += obj[1];
+            // obj[2] = scale;
+
+            var scale = parseInt(i / nums[3]);
+            obj[0] = i + 1;
+            obj[1] = (nums[4] == 1 ? (scale + 1) * nums[4] : Math.pow(nums[4], scale)) * nums[0];
+            sum += obj[1];
+            obj[2] = nums[4] == 1 ? (scale + 1) : Math.pow(nums[4], scale);
+
+            obj[3] = nums[1] * obj[2];
+            obj[4] = sum;
+            obj[5] = obj[3] - sum;
+            if (max === '' || obj[5] > max) {
+                max = obj[5];
+            }
+            if (min === '' || obj[5] < min) {
+                min = obj[5];
+            }
+            list.push(obj);
+        }
+        list.forEach(function(item) {
+            html += `<tr class="${item[5]===max?'max-value':''}${item[5]===min?'min-value':''}">
+	                <td>${item[0]}</td>
+	                <td>${item[1]}</td>
+	                <td>${item[2]}</td>
+	                <td>${item[3]}</td>
+	                <td>${item[4]}</td>
+	                <td>${item[5]}</td>
+	            </tr>`
+        })
+        return html;
+    }
+    </script>
+</body>
+
+</html>
