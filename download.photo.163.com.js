@@ -7,10 +7,11 @@ const piexif = require("piexifjs");
 
 
 // 单线程全量下载网易相册照片，并保存原有照片的exif信息
+//下面2个地方需要配置groupInfoCookie和userInfo.name
 
 
 // 相册列表页面 http://photo.163.com/xxx/#m=1&aid=xxx&p=1  接口AlbumBean.getAlbumData.dwr 的请求cookie，贴到这里
-var groupInfoCookie = ``;
+var groupInfoCookie = `xxxxxxxxxxxxxxxx`;
 var userInfo = {
 	name:'xxx',//把这里替换成你的网易账号名称 xxx@163.com
 	photoDir:'./photo/'
@@ -192,7 +193,7 @@ backAjax(`http://photo.163.com/${userInfo.name}/#m=0&p=1`,{
 															loadCount++;
 															photoIndex++;
 															downloadPhoto(photoIndex,0);
-															console.log('相册：',photoGroupList.length+1,'/',groupIndex+1,'本相册照片数量：',photoList.length,'/',photoIndex+1,' 总进度：'+(loadCount/allPhotoCount).toFixed(4)+'%')
+															console.log('相册：',photoGroupList.length+1,'/',groupIndex+1,'本相册照片数量：',photoList.length,'/',photoIndex+1,' 总进度：'+(loadCount/allPhotoCount*100).toFixed(2)+'%')
 														}else{
 															if (groupIndex<photoGroupList.length-1) {
 																groupIndex++;
