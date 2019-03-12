@@ -53,7 +53,10 @@ backAjax(`http://photo.163.com/${userInfo.name}/#m=0&p=1`,{
 						var allPhotoCount = photoGroupList.map(function (item) {
 							return item.count;
 						}).join('+');
-						console.log('相片总数：',eval(allPhotoCount))
+						allPhotoCount = eval(allPhotoCount);
+						console.log('相片总数：',allPhotoCount)
+						var loadCount = 0;
+
 						getOneGroup(0)
 
 						function getOneGroup(groupIndex){
@@ -96,7 +99,7 @@ backAjax(`http://photo.163.com/${userInfo.name}/#m=0&p=1`,{
 												var photoList = data.match(/(\[[^\]]+\])/);
 												if (photoList) {
 													photoList = photoList[0].replace(/\'/g,'"').replace(/(\w+):([^,\]\}]+)/g,'"$1":$2');
-													photoList = JSON.parse(photoList);
+													photoList = JSON.parse(photoList).sort(function(v1,v2){return v1.t-v2.t>0?1:-1});
 													downloadPhoto(0,0)
 												}
 
@@ -186,9 +189,10 @@ backAjax(`http://photo.163.com/${userInfo.name}/#m=0&p=1`,{
 
 													function nextRequest(){
 														if (photoIndex<photoList.length-1) {
+															loadCount++;
 															photoIndex++;
 															downloadPhoto(photoIndex,0);
-															console.log('本相册照片数量：',photoList.length,'当前第',photoIndex,'张')
+															console.log('相册：',photoGroupList.length+1,'/',groupIndex+1,'本相册照片数量：',photoList.length,'/',photoIndex+1,' 总进度：'+(loadCount/allPhotoCount).toFixed(4)+'%')
 														}else{
 															if (groupIndex<photoGroupList.length-1) {
 																groupIndex++;
@@ -309,13 +313,19 @@ function formatHeaders(str) {
 }
 
 
-function downloadImg(path,data){
+function downloadImg(filename,data){
 // 判断文件目录是否存在
 	if (!fs.existsSync(userInfo.photoDir)) {
         fs.mkdirSync(userInfo.photoDir);
     }
+    var result = filename.split('-')[0];
+
+	if (!fs.existsSync(userInfo.photoDir+result)) {
+        fs.mkdirSync(userInfo.photoDir+result);
+    }
+    var path = userInfo.photoDir+result+'/'+filename.replace(result+'-','');
 	fs.writeFileSync(path, data);
-	console.log(path,'保存成功');
+	console.log(path,'保存成功 \n');
 }
 function writeInExifAndSave(data,exifInfo){
 	var data = data.toString("binary");
@@ -349,5 +359,5 @@ function writeInExifAndSave(data,exifInfo){
 
 	var newData = piexif.insert(exifbytes, data);
 	var newJpeg = Buffer.from(newData, "binary");
-	downloadImg(userInfo.photoDir+exifInfo.photoName,newJpeg)
+	downloadImg(exifInfo.photoName,newJpeg)
 }
