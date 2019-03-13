@@ -7,29 +7,38 @@ const piexif = require("piexifjs");
 
 
 // 单线程全量下载网易相册照片，并保存原有照片的exif信息
-//下面2个地方需要配置groupInfoCookie和userInfo.name
+// 需要配置 globalCookies
 //直接在控制台执行命令：node download.photo.163.com.js 就可以执行了
 
 
-// 相册列表页面 http://photo.163.com/xxx/#m=1&aid=xxx&p=1  接口AlbumBean.getAlbumData.dwr 的请求cookie，贴到这里
-var groupInfoCookie = `xxxxxxxxxxxxxxxx`;
+// cookie获取方法：进入任意一个相册，打开浏览器控制台，找到post请求：CommentBean.getAllAComms.dwr，吧这个请求的cookie复制过来就行了
+// 其他cookie无效
+var globalCookies='';
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 var userInfo = {
-	name:'xxx',//把这里替换成你的网易账号名称 xxx@163.com
+	name:getUserFromCookie(globalCookies),//把这里替换成你的网易账号名称 xxx@163.com
 	photoDir:'./photo/'
 };
-
-
-
-
-
-
 var urlType = {
 	'0':'http://img1.ph.126.net',
 	'1':'http://img1.bimg.126.net',
 	'2':'http://img2.ph.126.net',
 };
 var cookies = {};
-
 
 // 打开首页
 backAjax(`http://photo.163.com/${userInfo.name}/#m=0&p=1`,{
@@ -84,7 +93,7 @@ backAjax(`http://photo.163.com/${userInfo.name}/#m=0&p=1`,{
 									Accept-Encoding: gzip, deflate
 									Content-Length: ${data.length}
 									Content-Type: text/plain
-									Cookie: ${groupInfoCookie}
+									Cookie: ${globalCookies}
 									Host: photo.163.com
 									Origin: http://photo.163.com
 									Referer: http://photo.163.com/${userInfo.name}/
@@ -150,7 +159,7 @@ backAjax(`http://photo.163.com/${userInfo.name}/#m=0&p=1`,{
 																Connection: keep-alive
 																Content-Length: 151
 																Content-Type: text/plain
-																Cookie: ${groupInfoCookie.replace(/ALBUMAPPID=([^;]+);/,cookies.ALBUMAPPID).replace('; _gat=1','')}
+																Cookie: ${globalCookies.replace(/ALBUMAPPID=([^;]+);/,cookies.ALBUMAPPID).replace('; _gat=1','')}
 																DNT: 1
 																Host: photo.163.com
 																Origin: http://photo.163.com
@@ -301,6 +310,10 @@ function backAjax(url,options) {
     req.end();
 }
 
+function getUserFromCookie(str){
+	// cookie要按顺序才能正常请求到数据
+	return str.match(/NETEASE_AUTH_USERNAME=([^;]+)/)[1]
+}
 
 
 function formatHeaders(str) {
