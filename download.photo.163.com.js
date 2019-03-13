@@ -4,6 +4,7 @@ const https = require('https');
 const URL = require('url');
 const zlib = require('zlib');
 const piexif = require("piexifjs");
+const slog = require('single-line-log').stdout;
 
 
 // 单线程全量下载网易相册照片，并保存原有照片的exif信息
@@ -11,7 +12,7 @@ const piexif = require("piexifjs");
 //直接在控制台执行命令：node download.photo.163.com.js 就可以执行了
 
 
-// cookie获取方法：进入任意一个相册，打开浏览器控制台，找到post请求：CommentBean.getAllAComms.dwr，吧这个请求的cookie复制过来就行了
+// cookie获取方法：进入任意一个相册，打开浏览器控制台，找到post请求： AlbumBean.getAlbumData.dwr ，吧这个请求的cookie复制过来就行了
 // 其他cookie无效
 var globalCookies='';
 
@@ -30,8 +31,8 @@ var globalCookies='';
 
 
 var userInfo = {
-	name:getUserFromCookie(globalCookies),//把这里替换成你的网易账号名称 xxx@163.com
-	photoDir:'./photo/'
+	name:getUserFromCookie(globalCookies),
+	photoDir:'./photo/',//你要保存相片的目录
 };
 var urlType = {
 	'0':'http://img1.ph.126.net',
@@ -39,7 +40,11 @@ var urlType = {
 	'2':'http://img2.ph.126.net',
 };
 var cookies = {};
-
+var allPhotoCount = 0;
+var loadCount = 0;
+var photoGroupList = [];
+var photoList = [];
+var pb = new ProgressBar('下载进度', 50);
 // 打开首页
 backAjax(`http://photo.163.com/${userInfo.name}/#m=0&p=1`,{
 	headers:'Content-Encoding: gzip',
@@ -56,181 +61,14 @@ backAjax(`http://photo.163.com/${userInfo.name}/#m=0&p=1`,{
 							return item.replace(/var\s[\w\$]+\s*=\s*|;$/g,'');
 						});
 						var idList = result[0].replace(/'|;'/g,'').split(';');
-						var photoGroupList = JSON.parse(result[1].replace(/\'/g,'"').replace(/(\w+):([^,\]\}]+)/g,'"$1":$2'));
-
-						photoGroupList = photoGroupList.sort(function(v1,v2){return v1.t-v2.t>0?1:-1});
-
-
-						var allPhotoCount = photoGroupList.map(function (item) {
+						var list = JSON.parse(result[1].replace(/\'/g,'"').replace(/(\w+):([^,\]\}]+)/g,'"$1":$2'));
+						photoGroupList = list.sort(function(v1,v2){return v1.t-v2.t>0?1:-1});
+						allPhotoCount = eval(photoGroupList.map(function (item) {
 							return item.count;
-						}).join('+');
-						allPhotoCount = eval(allPhotoCount);
-						console.log('相片总数：',allPhotoCount)
-						var loadCount = 0;
-
+						}).join('+'));
 						getOneGroup(0)
-
-						function getOneGroup(groupIndex){
-							var oneGroup= photoGroupList[groupIndex];
-							// 获取某一个相册的照片列表
-							var data =[
-								'callCount=1',
-								'scriptSessionId=${scriptSessionId}187',
-								'c0-scriptName=AlbumBean',
-								'c0-methodName=getAlbumData',
-								'c0-id=0',
-								`c0-param0=string:${oneGroup.id}`,
-								'c0-param1=string:',
-								'c0-param2=string:',
-								`c0-param3=number:${oneGroup.dmt}`,
-								'c0-param4=boolean:false',
-								'batchId=694780'
-							].join('&');
-							// 每次请求一个相册，就会得到一个ALBUMAPPID的cookie
-							backAjax(`http://photo.163.com/photo/${userInfo.name}/dwr/call/plaincall/AlbumBean.getAlbumData.dwr?u=${userInfo.name}`,{
-								method:'POST',
-								headers:`
-									Accept-Encoding: gzip, deflate
-									Content-Length: ${data.length}
-									Content-Type: text/plain
-									Cookie: ${globalCookies}
-									Host: photo.163.com
-									Origin: http://photo.163.com
-									Referer: http://photo.163.com/${userInfo.name}/
-									User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/72.0.3626.121 Safari/537.36
-								`,
-								data:data,
-								success:function (data,headers) {
-									// dwr.engine._remoteHandleCallback('694780','0',"s1.ph.126.net/bxjmSf2dkYbu3u5ZSDXsbw==/29686815861856.js");
-									var url = data.match(/['"]([^"']+)['"]\)/);
-									if (url) {
-										url = 'http://'+url[1];
-										backAjax(url,{
-											success:function (data) {
-												var photoList = data.match(/(\[[^\]]+\])/);
-												if (photoList) {
-													photoList = photoList[0].replace(/\'/g,'"').replace(/(\w+):([^,\]\}]+)/g,'"$1":$2');
-													photoList = JSON.parse(photoList).sort(function(v1,v2){return v1.t-v2.t>0?1:-1});
-													downloadPhoto(0,0)
-												}
-
-												function downloadPhoto(photoIndex,typeNum){
-													var photo = photoList[photoIndex];
-													typeNum= typeNum===undefined?0:typeNum;
-													photoUrl = urlType[typeNum] + photo.ourl.replace(/^\w/,'');
-													var photoName = oneGroup.id+'-'+photo.id+'-'+photo.ourl.replace(/[\w=-]+\//g,'');
-													if (photo.t1===0) {
-														// 没有exif信息
-														backAjax(photoUrl,{
-															success:function (data) {
-																downloadImg(photoName,data);
-																nextRequest();
-															},
-															error:function(err){
-																console.log('图片下载失败 重新尝试',photo.id);
-																if (typeNum<2) {
-																	typeNum++;
-																	downloadPhoto(photoIndex,typeNum);
-																}else{
-																	nextRequest();
-																}
-															},
-														});
-													}else{
-														// 原图
-														// http://img1.ph.126.net/${ourl}
-														// 获取exif信息
-														var data = [
-															'callCount=1',
-															'scriptSessionId=${scriptSessionId}187',
-															'c0-scriptName=PhotoBean',
-															'c0-methodName=getPhotoExif',
-															'c0-id=0',
-															`c0-param0=string:${photo.id}`,
-															'batchId=346923',
-														].join('&');
-														var exifUrl = `http://photo.163.com/photo/${userInfo.name}/dwr/call/plaincall/PhotoBean.getPhotoExif.dwr`;
-														backAjax(exifUrl,{
-															method:'POST',
-															headers:`
-																Accept: */*
-																Accept-Encoding: gzip, deflate
-																Accept-Language: zh-CN,zh;q=0.9,en;q=0.8,en-US;q=0.7,ja;q=0.6,und;q=0.5
-																Connection: keep-alive
-																Content-Length: 151
-																Content-Type: text/plain
-																Cookie: ${globalCookies.replace(/ALBUMAPPID=([^;]+);/,cookies.ALBUMAPPID).replace('; _gat=1','')}
-																DNT: 1
-																Host: photo.163.com
-																Origin: http://photo.163.com
-																Referer: http://photo.163.com/${userInfo.name}/
-																User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/72.0.3626.121 Safari/537.36
-															`,
-															data:data,
-															success:function (data) {
-																var exif = data.match(/(\{[^\}]+\})/);
-																if (exif) {
-																	exif = exif[0].replace(/\'/g,'"').replace(/(\w+):([^,\]\}]+)/g,'"$1":$2');
-																	exif = JSON.parse(exif);
-																	exif.photoName = photoName;
-
-																	backAjax(photoUrl,{
-																		success:function (data) {
-																			writeInExifAndSave(data,exif);
-																			nextRequest();
-																		},
-																		error:function(err){
-																			console.log('图片下载失败 重新尝试',photo.id)
-																			if (typeNum<2) {
-																				typeNum++;
-																				downloadPhoto(photoIndex,typeNum);
-																			}else{
-																				nextRequest();
-																			}
-																		},
-																	})
-																}
-															},
-															error:function (err) {
-																console.log('exif信息获取失败',err)
-															}
-														})
-													}
-
-
-													function nextRequest(){
-														if (photoIndex<photoList.length-1) {
-															loadCount++;
-															photoIndex++;
-															downloadPhoto(photoIndex,0);
-															console.log('相册：',photoGroupList.length+1,'/',groupIndex+1,'本相册照片数量：',photoList.length,'/',photoIndex+1,' 总进度：'+(loadCount/allPhotoCount*100).toFixed(2)+'%')
-														}else{
-															if (groupIndex<photoGroupList.length-1) {
-																groupIndex++;
-																console.log('继续下载下一个相册',photoGroupList.length,groupIndex);
-																getOneGroup(groupIndex);
-															}else{
-																console.log('全部下载完毕');
-															}
-														}
-													}
-
-
-
-												}
-											},
-											error:function(err){
-												console.log('照片列表获取失败',err);
-											},
-										})
-									}
-								},
-								error:function (err) {
-									console.log('获取相册详细信息 失败：',err)
-								}
-							})
-						}
-
+					}else{
+						console.log('相册为空，没有要下载的照片')
 					}
 				},
 				error:function(err){
@@ -245,6 +83,167 @@ backAjax(`http://photo.163.com/${userInfo.name}/#m=0&p=1`,{
 		console.log('首页打开失败:'+err)
 	},
 })
+
+
+function getOneGroup(groupIndex){
+	var oneGroup= photoGroupList[groupIndex];
+	// 获取某一个相册的照片列表
+	var data =[
+		'callCount=1',
+		'scriptSessionId=${scriptSessionId}187',
+		'c0-scriptName=AlbumBean',
+		'c0-methodName=getAlbumData',
+		'c0-id=0',
+		`c0-param0=string:${oneGroup.id}`,
+		'c0-param1=string:',
+		'c0-param2=string:',
+		`c0-param3=number:${oneGroup.dmt}`,
+		'c0-param4=boolean:false',
+		'batchId=694780'
+	].join('&');
+	// 每次请求一个相册，就会得到一个ALBUMAPPID的cookie
+	backAjax(`http://photo.163.com/photo/${userInfo.name}/dwr/call/plaincall/AlbumBean.getAlbumData.dwr?u=${userInfo.name}`,{
+		method:'POST',
+		headers:`
+			Accept-Encoding: gzip, deflate
+			Content-Length: ${data.length}
+			Content-Type: text/plain
+			Cookie: ${globalCookies}
+			Host: photo.163.com
+			Origin: http://photo.163.com
+			Referer: http://photo.163.com/${userInfo.name}/
+			User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/72.0.3626.121 Safari/537.36
+		`,
+		data:data,
+		success:function (data,headers) {
+			// dwr.engine._remoteHandleCallback('694780','0',"s1.ph.126.net/bxjmSf2dkYbu3u5ZSDXsbw==/29686815861856.js");
+			var url = data.match(/['"]([^"']+)['"]\)/);
+			if (url) {
+				url = 'http://'+url[1];
+				backAjax(url,{
+					success:function (data) {
+						var list = data.match(/(\[[^\]]+\])/);
+						if (list) {
+							list = list[0].replace(/\'/g,'"').replace(/(\w+):([^,\]\}]+)/g,'"$1":$2');
+							photoList = JSON.parse(list).sort(function(v1,v2){return v1.t-v2.t>0?1:-1});
+							downloadPhoto(groupIndex,0,0)
+						}else{
+							console.log('未请求到照片列表，可能cookie已失效')
+						}
+					},
+					error:function(err){
+						console.log('照片列表获取失败',err);
+					},
+				})
+			}
+		},
+		error:function (err) {
+			console.log('获取相册详细信息 失败：',err)
+		}
+	})
+}
+function downloadPhoto(groupIndex,photoIndex,typeNum){
+	var oneGroup = photoGroupList[groupIndex];
+	var photo = photoList[photoIndex];
+	typeNum= typeNum===undefined?0:typeNum;
+	photoUrl = urlType[typeNum] + photo.ourl.replace(/^\w/,'');
+	var photoName = oneGroup.id+'-'+photo.id+'-'+photo.ourl.replace(/[\w=-]+\//g,'');
+	if (photo.t1===0) {
+		// 没有exif信息
+		backAjax(photoUrl,{
+			success:function (data) {
+				downloadImg(photoName,data);
+				nextRequest();
+			},
+			error:function(err){
+				console.log('图片下载失败 重新尝试',photo.id);
+				if (typeNum<2) {
+					typeNum++;
+					downloadPhoto(groupIndex,photoIndex,typeNum);
+				}else{
+					nextRequest();
+				}
+			},
+		});
+	}else{
+		// 原图
+		// http://img1.ph.126.net/${ourl}
+		// 获取exif信息
+		var data = [
+			'callCount=1',
+			'scriptSessionId=${scriptSessionId}187',
+			'c0-scriptName=PhotoBean',
+			'c0-methodName=getPhotoExif',
+			'c0-id=0',
+			`c0-param0=string:${photo.id}`,
+			'batchId=346923',
+		].join('&');
+		var exifUrl = `http://photo.163.com/photo/${userInfo.name}/dwr/call/plaincall/PhotoBean.getPhotoExif.dwr`;
+		backAjax(exifUrl,{
+			method:'POST',
+			headers:`
+				Accept: */*
+				Accept-Encoding: gzip, deflate
+				Accept-Language: zh-CN,zh;q=0.9,en;q=0.8,en-US;q=0.7,ja;q=0.6,und;q=0.5
+				Connection: keep-alive
+				Content-Length: 151
+				Content-Type: text/plain
+				Cookie: ${globalCookies.replace(/ALBUMAPPID=([^;]+);/,cookies.ALBUMAPPID).replace('; _gat=1','')}
+				DNT: 1
+				Host: photo.163.com
+				Origin: http://photo.163.com
+				Referer: http://photo.163.com/${userInfo.name}/
+				User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/72.0.3626.121 Safari/537.36
+			`,
+			data:data,
+			success:function (data) {
+				var exif = data.match(/(\{[^\}]+\})/);
+				if (exif) {
+					exif = exif[0].replace(/\'/g,'"').replace(/(\w+):([^,\]\}]+)/g,'"$1":$2');
+					exif = JSON.parse(exif);
+					exif.photoName = photoName;
+
+					backAjax(photoUrl,{
+						success:function (data) {
+							writeInExifAndSave(data,exif);
+							nextRequest();
+						},
+						error:function(err){
+							console.log('图片下载失败 重新尝试',photo.id)
+							if (typeNum<2) {
+								typeNum++;
+								downloadPhoto(groupIndex,photoIndex,typeNum);
+							}else{
+								nextRequest();
+							}
+						},
+					})
+				}
+			},
+			error:function (err) {
+				console.log('exif信息获取失败',err)
+			}
+		})
+	}
+
+
+	function nextRequest(){
+		if (photoIndex<photoList.length-1) {
+			loadCount++;
+			photoIndex++;
+			downloadPhoto(groupIndex,photoIndex,0);
+			pb.render({ completed: loadCount, total: allPhotoCount});
+		}else{
+			if (groupIndex<photoGroupList.length-1) {
+				groupIndex++;
+				console.log('继续下载下一个相册',photoGroupList.length,groupIndex);
+				getOneGroup(groupIndex);
+			}else{
+				console.log('全部下载完毕');
+			}
+		}
+	}
+}
 
 
 
@@ -375,4 +374,36 @@ function writeInExifAndSave(data,exifInfo){
 	var newData = piexif.insert(exifbytes, data);
 	var newJpeg = Buffer.from(newData, "binary");
 	downloadImg(exifInfo.photoName,newJpeg)
+}
+
+
+// 封装的 ProgressBar 工具
+function ProgressBar(description, bar_length){
+ // 两个基本参数(属性)
+ this.description = description || 'Progress';    // 命令行开头的文字信息
+ this.length = bar_length || 25;           // 进度条的长度(单位：字符)，默认设为 25
+
+ // 刷新进度条图案、文字的方法
+ this.render = function (opts){
+  var percent = (opts.completed / opts.total).toFixed(4);  // 计算进度(子任务的 完成数 除以 总数)
+  var cell_num = Math.floor(percent * this.length);       // 计算需要多少个 █ 符号来拼凑图案
+
+  // 拼接黑色条
+  var cell = '';
+  for (var i=0;i<cell_num;i++) {
+   cell += '█';
+  }
+
+  // 拼接灰色条
+  var empty = '';
+  for (var i=0;i<this.length-cell_num;i++) {
+   empty += '░';
+  }
+
+  // 拼接最终文本
+  var cmdText = this.description + ': ' + (100*percent).toFixed(2) + '% ' + cell + empty + ' ' + opts.completed + '/' + opts.total;
+  
+  // 在单行输出文本
+  slog(cmdText);
+ };
 }
