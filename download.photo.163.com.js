@@ -1,3 +1,26 @@
+/**
+ * @auther Chris
+ * @github github.com/jsoncode
+ * 
+ * 单线程全量下载 网易相册照片 工具
+ * 会保留原有照片的exif信息（相机品牌，型号，光圈，曝光度，等信息）
+ * 保存的目录结构为：/photo/相册id/相册id-照片id.jpg
+ * 
+ * 执行方法（小白专用，大神跳过）：
+ * 
+ * 1，安装nodejs:
+ * 		node 官网：https://nodejs.org/
+ * 		下载地址：https://nodejs.org/dist/v10.15.3/node-v10.15.3-x64.msi
+ * 2，使用npm安装依赖包： zlib piexifjs single-line-log
+ * 		npm install -g cnpm --registry=https://registry.npm.taobao.org
+ * 		cnpm install zlib
+ * 		...
+ * 3，配置cookies
+ *  	只需要一个NTES_SESS
+ *  	打开控制台，找到http://photo.163.com下的cookie，进行搜索NTES_SESS
+ * 4，在cmd命令行执行：node download.photo.163.com.js 就可以开始下载了。
+ */
+// 需要的依赖包
 const fs = require('fs');
 const http = require('http');
 const https = require('https');
@@ -6,44 +29,35 @@ const zlib = require('zlib');
 const piexif = require("piexifjs");
 const slog = require('single-line-log').stdout;
 
-
-// 单线程全量下载网易相册照片，并保存原有照片的exif信息
-// 需要配置 globalCookies
-//直接在控制台执行命令：node download.photo.163.com.js 就可以执行了
-
-
-// cookie获取方法：进入任意一个相册，打开浏览器控制台，找到post请求： AlbumBean.getAlbumData.dwr ，吧这个请求的cookie复制过来就行了
-// 其他cookie无效
-var globalCookies='';
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+// 需要配置的信息
 var userInfo = {
-	name:getUserFromCookie(globalCookies),
+	name:'',
+	cookie_NTES_SESS:'',
 	photoDir:'./photo/',//你要保存相片的目录
 };
+
+
+// 照片需要的服务器地址
 var urlType = {
 	'0':'http://img1.ph.126.net',
 	'1':'http://img1.bimg.126.net',
 	'2':'http://img2.ph.126.net',
 };
+
+
+
+
+// 请求过程中缓存的cookie
 var cookies = {};
+// 照片总数
 var allPhotoCount = 0;
+// 已下载数量
 var loadCount = 0;
+// 相册总数
 var photoGroupList = [];
+// 某一个相册中的照片数量
 var photoList = [];
+// 下载进度
 var pb = new ProgressBar('下载进度', 50);
 // 打开首页
 backAjax(`http://photo.163.com/${userInfo.name}/#m=0&p=1`,{
@@ -54,6 +68,7 @@ backAjax(`http://photo.163.com/${userInfo.name}/#m=0&p=1`,{
 			jsFile = jsFile[1];
 			// 获取相册列表
 			backAjax(jsFile,{
+				headers:'Content-Encoding: gzip',
 				success:function (data) {
 					var result = data.match(/(['"][\s\S]+?['"]|\[[^\]]+\]);/g);
 					if (result) {
@@ -108,7 +123,7 @@ function getOneGroup(groupIndex){
 			Accept-Encoding: gzip, deflate
 			Content-Length: ${data.length}
 			Content-Type: text/plain
-			Cookie: ${globalCookies}
+			Cookie: NTES_SESS=${userInfo.cookie_NTES_SESS}
 			Host: photo.163.com
 			Origin: http://photo.163.com
 			Referer: http://photo.163.com/${userInfo.name}/
@@ -135,6 +150,8 @@ function getOneGroup(groupIndex){
 						console.log('照片列表获取失败',err);
 					},
 				})
+			}else{
+				console.log('未获取到照片列表，可能cookie已失效')
 			}
 		},
 		error:function (err) {
@@ -188,7 +205,7 @@ function downloadPhoto(groupIndex,photoIndex,typeNum){
 				Connection: keep-alive
 				Content-Length: 151
 				Content-Type: text/plain
-				Cookie: ${globalCookies.replace(/ALBUMAPPID=([^;]+);/,cookies.ALBUMAPPID).replace('; _gat=1','')}
+				Cookie: NTES_SESS=${userInfo.cookie_NTES_SESS};ALBUMAPPID=${cookies.ALBUMAPPID}
 				DNT: 1
 				Host: photo.163.com
 				Origin: http://photo.163.com
@@ -232,14 +249,14 @@ function downloadPhoto(groupIndex,photoIndex,typeNum){
 			loadCount++;
 			photoIndex++;
 			downloadPhoto(groupIndex,photoIndex,0);
-			pb.render({ completed: loadCount, total: allPhotoCount});
+			pb.render({ completed: loadCount+1, total: allPhotoCount});
 		}else{
 			if (groupIndex<photoGroupList.length-1) {
 				groupIndex++;
 				console.log('继续下载下一个相册',photoGroupList.length,groupIndex);
 				getOneGroup(groupIndex);
 			}else{
-				console.log('全部下载完毕');
+				pb.render({ completed: allPhotoCount, total: allPhotoCount});
 			}
 		}
 	}
@@ -309,9 +326,16 @@ function backAjax(url,options) {
     req.end();
 }
 
-function getUserFromCookie(str){
-	// cookie要按顺序才能正常请求到数据
-	return str.match(/NETEASE_AUTH_USERNAME=([^;]+)/)[1]
+function formatCookies(){
+	var obj = {
+		mobileadbannercookiekey:'',
+		NTES_SESS:'',//http only 
+		S_INFO:'',
+		P_INFO:'',
+		NETEASE_AUTH_USERNAME:'',
+		ALBUMAPPID:'',
+		NETEASE_AUTH_SOURCE:'',
+	};
 }
 
 
@@ -339,9 +363,12 @@ function downloadImg(filename,data){
     }
     var path = userInfo.photoDir+result+'/'+filename.replace(result+'-','');
 	fs.writeFileSync(path, data);
-	console.log(path,'保存成功 \n');
 }
+
+
+
 function writeInExifAndSave(data,exifInfo){
+
 	var data = data.toString("binary");
 	var zeroth = {};
 	var exif = {};
