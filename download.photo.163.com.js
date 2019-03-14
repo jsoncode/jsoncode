@@ -348,15 +348,15 @@ function writeInExifAndSave(data,exifInfo){
 	var gps = {};
 
 	zeroth[piexif.ImageIFD.Make] = exifInfo.make;//工具,相机品牌
-	zeroth[piexif.ImageIFD.XResolution] = [777, 1];
-	zeroth[piexif.ImageIFD.YResolution] = [777, 1];
+	// zeroth[piexif.ImageIFD.XResolution] = [777, 1];
+	// zeroth[piexif.ImageIFD.YResolution] = [777, 1];
 	zeroth[piexif.ImageIFD.Software] = exifInfo.model;//软件版本号,型号
 	zeroth[piexif.ImageIFD.Orientation] = exifInfo.orientation;//拍摄方向
 
 	exif[piexif.ExifIFD.DateTimeOriginal] = exifInfo.dateTime.replace(/\//g,':');//创建时间
-	exif[piexif.ExifIFD.LensMake] = "LensMake";
-	exif[piexif.ExifIFD.Sharpness] = 777;
-	exif[piexif.ExifIFD.LensSpecification] = [[1, 1], [1, 1], [1, 1], [1, 1]];
+	// exif[piexif.ExifIFD.LensMake] = "SONY";
+	// exif[piexif.ExifIFD.Sharpness] = 777;
+	// exif[piexif.ExifIFD.LensSpecification] = [[1, 1], [1, 1], [1, 1], [1, 1]];
 	exif[piexif.ExifIFD.ApertureValue] = exifInfo.apertureValue;//镜头光圈
 	exif[piexif.ExifIFD.MaxApertureValue] = exifInfo.maxApertureValue;//最大光圈
 	exif[piexif.ExifIFD.ISOSpeedRatings] = exifInfo.isoSpeedRatings*1;//感光度
@@ -364,8 +364,8 @@ function writeInExifAndSave(data,exifInfo){
 	exif[piexif.ExifIFD.ExposureTime] = exifInfo.exposureTime;//曝光时间
 	exif[piexif.ExifIFD.ExposureBiasValue] = exifInfo.exposureBiasValue;//曝光补偿
 
-	gps[piexif.GPSIFD.GPSVersionID] = [7, 7, 7, 7];
-	gps[piexif.GPSIFD.GPSDateStamp] = "1999:99:99 99:99:99";
+	// gps[piexif.GPSIFD.GPSVersionID] = [7, 7, 7, 7];
+	// gps[piexif.GPSIFD.GPSDateStamp] = "1999:99:99 99:99:99";
 
 
 	var exifObj = {"0th":zeroth, "Exif":exif, "GPS":gps};
