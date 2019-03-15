@@ -11,9 +11,9 @@
  * 1，安装nodejs:
  * 		node 官网：https://nodejs.org/
  * 		下载地址：https://nodejs.org/dist/v10.15.3/node-v10.15.3-x64.msi
- * 2，使用npm安装依赖包： zlib piexifjs single-line-log
+ * 2，使用npm安装依赖包： piexifjs single-line-log
  * 		npm install -g cnpm --registry=https://registry.npm.taobao.org
- * 		cnpm install zlib
+ * 		cnpm install piexifjs
  * 		...
  * 3，配置cookies
  *  	只需要一个NTES_SESS
@@ -32,7 +32,7 @@ const slog = require('single-line-log').stdout;
 // 需要配置的信息
 var userInfo = {
 	name:'',
-	cookie_NTES_SESS:'',
+	cookie_NTES_SESS:'',//
 	photoDir:'./photo/',//你要保存相片的目录
 };
 
@@ -66,30 +66,7 @@ backAjax(`http://photo.163.com/${userInfo.name}/#m=0&p=1`,{
 		var jsFile = data.match(/<script type="text\/javascript">\s*UD\s*=[\s\S]+?albumUrl\s*:\s*['"]([^'"]+)?['"]/);
 		if (jsFile) {
 			jsFile = jsFile[1];
-			// 获取相册列表
-			backAjax(jsFile,{
-				headers:'Content-Encoding: gzip',
-				success:function (data) {
-					var result = data.match(/(['"][\s\S]+?['"]|\[[^\]]+\]);/g);
-					if (result) {
-						result = result.map(function(item){
-							return item.replace(/var\s[\w\$]+\s*=\s*|;$/g,'');
-						});
-						var idList = result[0].replace(/'|;'/g,'').split(';');
-						var list = JSON.parse(result[1].replace(/\'/g,'"').replace(/(\w+):([^,\]\}]+)/g,'"$1":$2'));
-						photoGroupList = list.sort(function(v1,v2){return v1.t-v2.t>0?1:-1});
-						allPhotoCount = eval(photoGroupList.map(function (item) {
-							return item.count;
-						}).join('+'));
-						getOneGroup(0)
-					}else{
-						console.log('相册为空，没有要下载的照片')
-					}
-				},
-				error:function(err){
-					console.log('获取相册列表失败:'+err)
-				},
-			})
+			getPhotoGroup(jsFile);
 		}else{
 			console.log('没有找到相册列表，可能你的配置链接错误');
 		}
@@ -99,7 +76,32 @@ backAjax(`http://photo.163.com/${userInfo.name}/#m=0&p=1`,{
 	},
 })
 
-
+function getPhotoGroup(jsFile){
+	// 获取相册列表
+	backAjax(jsFile,{
+		headers:'Content-Encoding: gzip',
+		success:function (data) {
+			var result = data.match(/(['"][\s\S]+?['"]|\[[^\]]+\]);/g);
+			if (result) {
+				result = result.map(function(item){
+					return item.replace(/var\s[\w\$]+\s*=\s*|;$/g,'');
+				});
+				var idList = result[0].replace(/'|;'/g,'').split(';');
+				var list = JSON.parse(result[1].replace(/\'/g,'"').replace(/(\w+):([^,\]\}]+)/g,'"$1":$2'));
+				photoGroupList = list.sort(function(v1,v2){return v1.t-v2.t>0?1:-1});
+				allPhotoCount = eval(photoGroupList.map(function (item) {
+					return item.count;
+				}).join('+'));
+				getOneGroup(0)
+			}else{
+				console.log('相册为空，没有要下载的照片')
+			}
+		},
+		error:function(err){
+			console.log('获取相册列表失败:'+err)
+		},
+	})
+}
 function getOneGroup(groupIndex){
 	var oneGroup= photoGroupList[groupIndex];
 	// 获取某一个相册的照片列表
