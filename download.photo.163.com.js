@@ -381,7 +381,7 @@ function writeInExifAndSave(data,exifInfo){
 	// zeroth[piexif.ImageIFD.YResolution] = [777, 1];
 	zeroth[piexif.ImageIFD.Software] = exifInfo.model;//软件版本号,型号
 	zeroth[piexif.ImageIFD.Orientation] = exifInfo.orientation;//拍摄方向
-
+	// 1999:99:99 99:99:99
 	exif[piexif.ExifIFD.DateTimeOriginal] = exifInfo.dateTime.replace(/\//g,':');//创建时间
 	// exif[piexif.ExifIFD.LensMake] = "SONY";
 	// exif[piexif.ExifIFD.Sharpness] = 777;
