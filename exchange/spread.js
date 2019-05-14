@@ -35,23 +35,26 @@
   			<table>
   			<thead>
   				<tr>
-  					<th @click="sortBy('assetPair')">交易对</th>
+					<th @click="sortBy('assetPair')">交易对</th>
+					  
   					<th @click="sortBy('huobi')">huobi</th>
+  					<th @click="sortBy('binance')">binance</th>
   					<th @click="sortBy('bitfinex')">bitfinex</th>
-  					<th @click="sortBy('gateio')">gateio</th>
   					<th @click="sortBy('okex')">okex</th>
   					<th @click="sortBy('bitcoinvn')">bitcoinvn</th>
+  					<th @click="sortBy('spread')">spread</th>
   				</tr>
   			</thead>
   			<tbody>
   				<tr v-for="item in sortList">
-  					<td v-text="item.symbol"></td>
+					<td v-text="item.symbol"></td>
+					  
   					<td v-text="item.huobi_price"></td>
+  					<td v-text="item.binance_price"></td>
   					<td v-text="item.bitfinex_price"></td>
-  					<td v-text="item.gateio_price"></td>
   					<td v-text="item.okex_price"></td>
-  					<td></td>
   					<td v-text="item.bitcoinvn_price"></td>
+  					<td v-text="item.spread"></td>
   				</tr>
   			</tbody>
   			</table>
@@ -64,26 +67,48 @@
       dataMap: {},
       allData: {},
       sortList: [],
-      sortType: 'assetPair'
+      sortType: 'spread'
     },
     mounted: function() {
       var vm = this
-      //   vm.get_bitcome()
-      vm.get_bitcoinvn()
-      vm.get_huobi()
-      vm.get_okex()
-      vm.get_gateio()
-      vm.get_ajax_bitfinex()
+      setTimeout(function() {
+        vm.get_huobi()
+        // vm.get_binance()
+        // vm.get_ajax_bitfinex()
+        // vm.get_okex()
+        // vm.get_gateio()
+        vm.get_bitcoinvn()
+      }, 2000)
     },
     methods: {
+      setSpread: function(item) {
+        var vm = this
+        var list = []
+        for (const i in item) {
+          if (i !== 'spread' && i !== 'symbol') {
+            var num = item[i]
+            if (!isNaN(num)) {
+              list.push(num)
+            }
+          }
+        }
+        var spread = 0
+        if (list.length > 1) {
+          var min = list.min()
+          var max = list.max()
+          spread = ((Math.abs(max - min) / min) * 100).toFixed(2) * 1
+        }
+        return spread
+      },
       sortBy: function(type) {
         var vm = this
         vm.sortType = type || vm.sortType
         vm.sortList = Object.values(vm.allData).sort(function(v1, v2) {
           if (vm.sortType === 'assetPair') {
-            var len1 = Object.keys(v1).length
-            var len2 = Object.keys(v2).length
-            return len1 < len2 ? 1 : -1
+            // var len1 = Object.keys(v1).length
+            // var len2 = Object.keys(v2).length
+            // return len1 < len2 ? 1 : -1
+            return v1.symbol.localeCompare(v2.symbol)
           } else if (vm.sortType === 'huobi') {
             return v1.huobi_price != undefined ? -1 : 1
           } else if (vm.sortType === 'bitfinex') {
@@ -92,10 +117,12 @@
             return v1.gateio_price != undefined ? -1 : 1
           } else if (vm.sortType === 'okex') {
             return v1.okex_price != undefined ? -1 : 1
-          } else if (vm.sortType === 'bitcome') {
-            return v1.bitcome_price != undefined ? -1 : 1
+          } else if (vm.sortType === 'binance') {
+            return v1.binance_price != undefined ? -1 : 1
           } else if (vm.sortType === 'bitcoinvn') {
             return v1.bitcoinvn_price != undefined ? -1 : 1
+          } else if (vm.sortType === 'spread') {
+            return v1.spread < v2.spread ? 1 : -1
           }
           return 1
         })
@@ -119,7 +146,9 @@
             var ws = new WebSocket(url)
             ws.onopen = function() {
               sendMsg.forEach(function(item) {
-                ws.send(JSON.stringify(item))
+                if (item) {
+                  ws.send(JSON.stringify(item))
+                }
               })
               if (pingMsg) {
                 vm.socketMap[url + 'timer'] = setInterval(function() {
@@ -146,9 +175,7 @@
               }, 5000)
             }
           }
-        } catch (error) {
-          console.log(error)
-        }
+        } catch (error) {}
       },
       get_bitcoinvn: function(transactionPair) {
         var vm = this
@@ -167,13 +194,38 @@
               vm.dataMap.bitcoinvn = {}
             }
             if (data.data) {
+              var btc_usdt = data.data.btc_usdt.split(',')[1] * 1
+              var eth_usdt = data.data.eth_usdt.split(',')[1] * 1
+              var usdt_vnd = data.data.usdt_vnd.split(',')[1] * 1
+
               for (const item in data.data) {
                 if (data.data.hasOwnProperty(item)) {
                   const str = data.data[item]
                   var element = str.split(',')
+                  var close = element[1] * 1
+                  var usdtPrice = close
+                  if (item.indexOf('_btc') > -1) {
+                    if (item !== 'btc_usdt') {
+                      usdtPrice = (close * btc_usdt).toFixed(8) * 1
+                    }
+                  } else if (item.indexOf('_vnd') > -1) {
+                    if (item !== 'usdt_vnd') {
+                      usdtPrice = (close / usdt_vnd).toFixed(8) * 1
+                    }
+                  } else if (item.indexOf('_eth') > -1) {
+                    usdtPrice = (close * eth_usdt).toFixed(8) * 1
+                  }
+                  if (!vm.allData[item]) {
+                    vm.allData[item] = {}
+                  }
+                  vm.allData[item] = Object.assign({}, vm.allData[item], {
+                    bitcoinvn_price: usdtPrice,
+                    symbol: item
+                  })
+                  vm.allData[item].spread = vm.setSpread(vm.allData[item])
                   vm.dataMap.bitcoinvn[item] = {
                     vol: element[0] * 1,
-                    close: element[1] * 1,
+                    close: close,
                     high: element[2] * 1,
                     low: element[3] * 1,
                     change: element[4] * 1,
@@ -182,107 +234,123 @@
                 }
               }
 
-              var btc_usdt = vm.dataMap.bitcoinvn.btc_usdt.close
-              var eth_usdt = vm.dataMap.bitcoinvn.eth_usdt.close
-              var usdt_vnd = vm.dataMap.bitcoinvn.usdt_vnd.close
-              for (const item in vm.dataMap.bitcoinvn) {
-                if (vm.dataMap.bitcoinvn.hasOwnProperty(item)) {
-                  const element = vm.dataMap.bitcoinvn[item]
-                  if (item.indexOf('_usdt') > -1) {
-                    element.usdtPrice = element.close
-                  } else if (item.indexOf('_btc') > -1) {
-                    if (item === 'btc_usdt') {
-                      element.usdtPrice = element.close
-                    } else {
-                      element.usdtPrice = (element.close * btc_usdt).toFixed(8) * 1
-                    }
-                  } else if (item.indexOf('_vnd') > -1) {
-                    if (item === 'usdt_vnd') {
-                      element.usdtPrice = element.close
-                    } else {
-                      element.usdtPrice = (element.close / usdt_vnd).toFixed(8) * 1
-                    }
-                  } else if (item.indexOf('_eth') > -1) {
-                    element.usdtPrice = (element.close * eth_usdt).toFixed(8) * 1
-                  }
-                  if (!vm.allData[item]) {
-                    vm.allData[item] = {}
-                  }
-                  vm.allData[item] = Object.assign({}, vm.allData[item], {
-                    bitcoinvn_price: element.usdtPrice,
-                    symbol: item
-                  })
-                  vm.dataMap.bitcoinvn[item] = Object.assign({}, vm.dataMap.bitcoinvn[item], element)
-                }
-              }
-
-              //   console.log(vm.allData)
               vm.sortBy()
               vm.$forceUpdate()
             }
           }
         )
       },
-      get_bitcome: function(transactionPair) {
+      get_binance: function(transactionPair) {
         var vm = this
-        var url = 'wss://www.bitcome.com/socket/v2'
+        var url = 'wss://stream.binance.com:9443/stream?streams=!miniTicker@arr@3000ms'
         vm.socket(
           url,
           [
-            { event: 'subscribe', channel: 'sub_market_quotation' }
+            // { event: 'subscribe', channel: 'sub_market_quotation' }
             // { symbol: transactionPair, event: 'subscribe', channel: 'sub_depth', limit: 200 },
             // { symbol: transactionPair, event: 'subscribe', channel: 'sub_trades' }
           ],
           null,
           function(data) {
+            data = data.toLowerCase()
             var data = JSON.parse(data)
-            if (!vm.dataMap.bitcome) {
-              vm.dataMap.bitcome = {}
+            if (!vm.dataMap.binance) {
+              vm.dataMap.binance = {}
             }
-            if (data.data) {
-              for (const item in data.data) {
-                if (data.data.hasOwnProperty(item)) {
-                  const str = data.data[item]
-                  var element = str.split(',')
-                  vm.dataMap.bitcome[item] = {
-                    vol: element[0] * 1,
-                    close: element[1] * 1,
-                    high: element[2] * 1,
-                    low: element[3] * 1,
-                    change: element[4] * 1,
-                    symbol: item
+            if (data.data && Array.isArray(data.data)) {
+              var markets = ['usdt', 'bnb', 'btc', 'eth', 'tusd', 'usdc', 'usds', 'pax', 'xrp']
+              data.data.forEach(function(item) {
+                var index = 0
+                markets.forEach(function(m, idx) {
+                  if (new RegExp(m + '$').test(item.s)) {
+                    index = idx
                   }
-                }
-              }
+                })
+                var current = markets[index]
+                item.s = item.s.replace(current, '_' + current)
 
-              var btc_usdt = vm.dataMap.bitcome.btc_usdt.close
-              var eth_usdt = vm.dataMap.bitcome.eth_usdt.close
-              for (const item in vm.dataMap.bitcome) {
-                if (vm.dataMap.bitcome.hasOwnProperty(item)) {
-                  const element = vm.dataMap.bitcome[item]
-                  if (item.indexOf('_usdt') > -1) {
-                    element.usdtPrice = element.close
-                  } else if (item.indexOf('_btc') > -1) {
-                    if (item === 'btc_usdt') {
-                      element.usdtPrice = element.close
-                    } else {
-                      element.usdtPrice = (element.close * btc_usdt).toFixed(8) * 1
-                    }
-                  } else if (item.indexOf('_eth') > -1) {
-                    element.usdtPrice = (element.close * eth_usdt).toFixed(8) * 1
-                  }
-                  if (!vm.allData[item]) {
+                vm.dataMap.binance[item.s] = {
+                  vol: item.v * 1,
+                  close: item.c * 1,
+                  high: item.h * 1,
+                  low: item.l * 1,
+                  open: item.o * 1,
+                  change: item.v * 1,
+                  quantity: item.q * 1,
+                  symbol: item.s
+                }
+              })
+
+              for (const item in vm.dataMap.binance) {
+                if (vm.dataMap.binance.hasOwnProperty(item)) {
+                  if (vm.allData[item] === undefined) {
                     vm.allData[item] = {}
                   }
-                  vm.allData[item] = Object.assign({}, vm.allData[item], {
-                    bitcoime_price: element.usdtPrice,
-                    symbol: item
-                  })
-                  vm.dataMap.bitcome[item] = Object.assign({}, vm.dataMap.bitcome[item], element)
+                  var element = vm.dataMap.binance[item]
+                  if (item.indexOf('_usdt') > -1) {
+                    element.usdtPrice = element.close
+                    vm.allData[item].binance_price = element.usdtPrice
+                    vm.allData[item].symbol = item
+                    vm.dataMap.binance[item] = element
+                  } else if (item.indexOf('_btc') > -1) {
+                    if (vm.dataMap.binance.btc_usdt) {
+                      element.usdtPrice = (element.close * vm.dataMap.binance.btc_usdt.close).toFixed(8) * 1
+                      vm.allData[item].binance_price = element.usdtPrice
+                      vm.allData[item].symbol = item
+                      vm.dataMap.binance[item] = element
+                    }
+                  } else if (item.indexOf('_eth') > -1) {
+                    if (vm.dataMap.binance.eth_usdt) {
+                      element.usdtPrice = (element.close * vm.dataMap.binance.eth_usdt.close).toFixed(8) * 1
+                      vm.allData[item].binance_price = element.usdtPrice
+                      vm.allData[item].symbol = item
+                      vm.dataMap.binance[item] = element
+                    }
+                  } else if (item.indexOf('_bnb') > -1) {
+                    if (vm.dataMap.binance.bnb_usdt) {
+                      element.usdtPrice = (element.close * vm.dataMap.binance.bnb_usdt.close).toFixed(8) * 1
+                      vm.allData[item].binance_price = element.usdtPrice
+                      vm.allData[item].symbol = item
+                      vm.dataMap.binance[item] = element
+                    }
+                  } else if (item.indexOf('_xrp') > -1) {
+                    if (vm.dataMap.binance.xrp_usdt) {
+                      element.usdtPrice = (element.close * vm.dataMap.binance.xrp_usdt.close).toFixed(8) * 1
+                      vm.allData[item].binance_price = element.usdtPrice
+                      vm.allData[item].symbol = item
+                      vm.dataMap.binance[item] = element
+                    }
+                  } else if (item.indexOf('_usdc') > -1) {
+                    if (vm.dataMap.binance.usdc_usdt) {
+                      element.usdtPrice = (element.close * vm.dataMap.binance.usdc_usdt.close).toFixed(8) * 1
+                      vm.allData[item].binance_price = element.usdtPrice
+                      vm.allData[item].symbol = item
+                      vm.dataMap.binance[item] = element
+                    }
+                  } else if (item.indexOf('_usds') > -1) {
+                    if (vm.dataMap.binance.usds_usdt) {
+                      element.usdtPrice = (element.close * vm.dataMap.binance.usds_usdt.close).toFixed(8) * 1
+                      vm.allData[item].binance_price = element.usdtPrice
+                      vm.allData[item].symbol = item
+                      vm.dataMap.binance[item] = element
+                    }
+                  } else if (item.indexOf('_tusd') > -1) {
+                    if (vm.dataMap.binance.tusd_usdt) {
+                      element.usdtPrice = (element.close * vm.dataMap.binance.tusd_usdt.close).toFixed(8) * 1
+                      vm.allData[item].binance_price = element.usdtPrice
+                      vm.allData[item].symbol = item
+                      vm.dataMap.binance[item] = element
+                    }
+                  } else if (item.indexOf('_pax') > -1) {
+                    if (vm.dataMap.binance.pax_usdt) {
+                      element.usdtPrice = (element.close * vm.dataMap.binance.pax_usdt.close).toFixed(8) * 1
+                      vm.allData[item].binance_price = element.usdtPrice
+                      vm.allData[item].symbol = item
+                      vm.dataMap.binance[item] = element
+                    }
+                  }
                 }
               }
-
-              //   console.log(vm.allData)
               vm.sortBy()
               vm.$forceUpdate()
             }
@@ -337,18 +405,13 @@
                 var usdt_husd = vm.dataMap.huobi.usdt_husd.close
                 var eth_usdt = vm.dataMap.huobi.eth_usdt.close
                 var ht_usdt = vm.dataMap.huobi.ht_usdt.close
-                // console.log(btc_usdt, usdt_husd, eth_usdt, ht_usdt)
                 for (const item in vm.dataMap.huobi) {
                   if (vm.dataMap.huobi.hasOwnProperty(item)) {
                     const element = vm.dataMap.huobi[item]
                     if (item.indexOf('_usdt') > -1) {
                       element.usdtPrice = element.close
                     } else if (item.indexOf('_btc') > -1) {
-                      if (item === 'btc_usdt') {
-                        element.usdtPrice = element.close
-                      } else {
-                        element.usdtPrice = (element.close * btc_usdt).toFixed(8) * 1
-                      }
+                      element.usdtPrice = (element.close * btc_usdt).toFixed(8) * 1
                     } else if (item.indexOf('_husd') > -1) {
                       if (item === 'usdt_husd') {
                         element.usdtPrice = element.close
@@ -367,11 +430,11 @@
                       huobi_price: element.usdtPrice,
                       symbol: item
                     })
+                    vm.allData[item].spread = vm.setSpread(vm.allData[item])
                     vm.dataMap.huobi[item] = Object.assign({}, vm.dataMap.huobi[item], element)
                   }
                 }
               }
-              //   console.log(vm.allData)
               vm.sortBy()
               vm.$forceUpdate()
             }
@@ -424,7 +487,6 @@
                   var btc_usdt = vm.dataMap.okex.btc_usdt.close
                   var eth_usdt = vm.dataMap.okex.eth_usdt.close
                   var okb_usdt = vm.dataMap.okex.okb_usdt.close
-                  // console.log(btc_usdt, usdt_husd, eth_usdt, ht_usdt)
                   for (const item in vm.dataMap.okex) {
                     if (vm.dataMap.okex.hasOwnProperty(item)) {
                       const element = vm.dataMap.okex[item]
@@ -448,11 +510,11 @@
                         okex_price: element.usdtPrice,
                         symbol: item
                       })
+                      vm.allData[item].spread = vm.setSpread(vm.allData[item])
                       vm.dataMap.okex[item] = Object.assign({}, vm.dataMap.okex[item], element)
                     }
                   }
                 }
-                // console.log(vm.allData)
               }
             }
             reader.readAsBinaryString(data)
@@ -518,7 +580,6 @@
           var btc_usdt = vm.dataMap.bitfinex.btc_usdt.close
           var eth_usdt = vm.dataMap.bitfinex.eth_usdt.close
           var usdt_usd = vm.dataMap.bitfinex.usdt_usd.close
-          // console.log(btc_usdt, usdt_husd, eth_usdt, ht_usdt)
           for (const item in vm.dataMap.bitfinex) {
             if (vm.dataMap.bitfinex.hasOwnProperty(item)) {
               const element = vm.dataMap.bitfinex[item]
@@ -542,13 +603,13 @@
                 bitfinex_price: element.usdtPrice,
                 symbol: item
               })
+              vm.allData[item].spread = vm.setSpread(vm.allData[item])
               vm.dataMap.bitfinex[item] = Object.assign({}, vm.dataMap.bitfinex[item], element)
             }
           }
           setTimeout(function() {
             vm.get_ajax_bitfinex()
           }, 10000)
-          //   console.log(vm.allData)
           vm.sortBy()
           vm.$forceUpdate()
         })
@@ -1052,11 +1113,11 @@
                       gateio_price: element.usdtPrice,
                       symbol: item
                     })
+                    vm.allData[item].spread = vm.setSpread(vm.allData[item])
                     vm.dataMap.gateio[item] = Object.assign({}, vm.dataMap.gateio[item], element)
                   }
                 }
               }
-              //   console.log(vm.allData)
               vm.sortBy()
               vm.$forceUpdate()
             }
