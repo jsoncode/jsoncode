@@ -22,44 +22,44 @@
   // www.bitfinex.com
   var style = document.createElement('style')
   style.innerHTML = `
-	table{width:100%}
-	table thead th {cursor:pointer;text-align:left;}
-  `
+	  table{width:100%}
+	  table thead th {cursor:pointer;text-align:left;}
+	`
   document.head.appendChild(style)
   var div = document.createElement('div')
   div.id = 'my-panel'
   //   document.body.innerHTML = ''
   document.body.appendChild(div)
   document.getElementById('my-panel').innerHTML = `
-  		<div>
-  			<table>
-  			<thead>
-  				<tr>
-					<th @click="sortBy('assetPair')">交易对</th>
-					  
-  					<th @click="sortBy('huobi')">huobi</th>
-  					<th @click="sortBy('binance')">binance</th>
-  					<th @click="sortBy('bitfinex')">bitfinex</th>
-  					<th @click="sortBy('okex')">okex</th>
-  					<th @click="sortBy('bitcoinvn')">bitcoinvn</th>
-  					<th @click="sortBy('spread')">spread</th>
-  				</tr>
-  			</thead>
-  			<tbody>
-  				<tr v-for="item in sortList">
-					<td v-text="item.symbol"></td>
-					  
-  					<td v-text="item.huobi_price"></td>
-  					<td v-text="item.binance_price"></td>
-  					<td v-text="item.bitfinex_price"></td>
-  					<td v-text="item.okex_price"></td>
-  					<td v-text="item.bitcoinvn_price"></td>
-  					<td v-text="item.spread"></td>
-  				</tr>
-  			</tbody>
-  			</table>
-  		</div>
-  	`
+			<div>
+				<table>
+				<thead>
+					<tr>
+					  <th @click="sortBy('assetPair')">交易对</th>
+  
+						<th @click="sortBy('huobi')">huobi</th>
+						<th @click="sortBy('binance')">binance</th>
+						<th @click="sortBy('bitfinex')">bitfinex</th>
+						<th @click="sortBy('okex')">okex</th>
+						<th @click="sortBy('bitcoinvn')">bitcoinvn</th>
+						<th @click="sortBy('spread')">spread</th>
+					</tr>
+				</thead>
+				<tbody>
+					<tr v-for="item in sortList">
+					  <td v-text="item.symbol"></td>
+  
+						<td v-text="item.huobi_price"></td>
+						<td v-text="item.binance_price"></td>
+						<td v-text="item.bitfinex_price"></td>
+						<td v-text="item.okex_price"></td>
+						<td v-text="item.bitcoinvn_price"></td>
+						<td v-text="item.spread"></td>
+					</tr>
+				</tbody>
+				</table>
+			</div>
+		`
   var app = new Vue({
     el: '#my-panel',
     data: {
@@ -67,17 +67,17 @@
       dataMap: {},
       allData: {},
       sortList: [],
-      sortType: 'spread'
+      sortType: 'spread',
+      sendWXMsgTime: {}
     },
     mounted: function() {
       var vm = this
       setTimeout(function() {
         vm.get_huobi()
-        // vm.get_binance()
+        vm.get_binance()
         // vm.get_ajax_bitfinex()
         // vm.get_okex()
         // vm.get_gateio()
-        vm.get_bitcoinvn()
       }, 2000)
     },
     methods: {
@@ -103,29 +103,33 @@
       sortBy: function(type) {
         var vm = this
         vm.sortType = type || vm.sortType
-        vm.sortList = Object.values(vm.allData).sort(function(v1, v2) {
-          if (vm.sortType === 'assetPair') {
-            // var len1 = Object.keys(v1).length
-            // var len2 = Object.keys(v2).length
-            // return len1 < len2 ? 1 : -1
-            return v1.symbol.localeCompare(v2.symbol)
-          } else if (vm.sortType === 'huobi') {
-            return v1.huobi_price != undefined ? -1 : 1
-          } else if (vm.sortType === 'bitfinex') {
-            return v1.bitfinex_price != undefined ? -1 : 1
-          } else if (vm.sortType === 'gateio') {
-            return v1.gateio_price != undefined ? -1 : 1
-          } else if (vm.sortType === 'okex') {
-            return v1.okex_price != undefined ? -1 : 1
-          } else if (vm.sortType === 'binance') {
-            return v1.binance_price != undefined ? -1 : 1
-          } else if (vm.sortType === 'bitcoinvn') {
-            return v1.bitcoinvn_price != undefined ? -1 : 1
-          } else if (vm.sortType === 'spread') {
-            return v1.spread < v2.spread ? 1 : -1
-          }
-          return 1
-        })
+        vm.sortList = Object.values(vm.allData)
+          .sort(function(v1, v2) {
+            if (vm.sortType === 'assetPair') {
+              // var len1 = Object.keys(v1).length
+              // var len2 = Object.keys(v2).length
+              // return len1 < len2 ? 1 : -1
+              return v1.symbol.localeCompare(v2.symbol)
+            } else if (vm.sortType === 'huobi') {
+              return v1.huobi_price != undefined ? -1 : 1
+            } else if (vm.sortType === 'bitfinex') {
+              return v1.bitfinex_price != undefined ? -1 : 1
+            } else if (vm.sortType === 'gateio') {
+              return v1.gateio_price != undefined ? -1 : 1
+            } else if (vm.sortType === 'okex') {
+              return v1.okex_price != undefined ? -1 : 1
+            } else if (vm.sortType === 'binance') {
+              return v1.binance_price != undefined ? -1 : 1
+            } else if (vm.sortType === 'bitcoinvn') {
+              return v1.bitcoinvn_price != undefined ? -1 : 1
+            } else if (vm.sortType === 'spread') {
+              return v1.spread < v2.spread ? 1 : -1
+            }
+            return 1
+          })
+          .filter(function(item) {
+            return true || Object.keys(item).length - 2 > 1 || item.bitcoinvn_price !== undefined
+          })
       },
       ajax: function(url, method, headers) {
         return new Promise(function(success) {
@@ -177,71 +181,10 @@
           }
         } catch (error) {}
       },
-      get_bitcoinvn: function(transactionPair) {
-        var vm = this
-        var url = 'wss://www.bitcoinvn.cloud/socket/v2'
-        vm.socket(
-          url,
-          [
-            { event: 'subscribe', channel: 'sub_market_quotation' }
-            // { symbol: transactionPair, event: 'subscribe', channel: 'sub_depth', limit: 200 },
-            // { symbol: transactionPair, event: 'subscribe', channel: 'sub_trades' }
-          ],
-          null,
-          function(data) {
-            var data = JSON.parse(data)
-            if (!vm.dataMap.bitcoinvn) {
-              vm.dataMap.bitcoinvn = {}
-            }
-            if (data.data) {
-              var btc_usdt = data.data.btc_usdt.split(',')[1] * 1
-              var eth_usdt = data.data.eth_usdt.split(',')[1] * 1
-              var usdt_vnd = data.data.usdt_vnd.split(',')[1] * 1
-
-              for (const item in data.data) {
-                if (data.data.hasOwnProperty(item)) {
-                  const str = data.data[item]
-                  var element = str.split(',')
-                  var close = element[1] * 1
-                  var usdtPrice = close
-                  if (item.indexOf('_btc') > -1) {
-                    if (item !== 'btc_usdt') {
-                      usdtPrice = (close * btc_usdt).toFixed(8) * 1
-                    }
-                  } else if (item.indexOf('_vnd') > -1) {
-                    if (item !== 'usdt_vnd') {
-                      usdtPrice = (close / usdt_vnd).toFixed(8) * 1
-                    }
-                  } else if (item.indexOf('_eth') > -1) {
-                    usdtPrice = (close * eth_usdt).toFixed(8) * 1
-                  }
-                  if (!vm.allData[item]) {
-                    vm.allData[item] = {}
-                  }
-                  vm.allData[item] = Object.assign({}, vm.allData[item], {
-                    bitcoinvn_price: usdtPrice,
-                    symbol: item
-                  })
-                  vm.allData[item].spread = vm.setSpread(vm.allData[item])
-                  vm.dataMap.bitcoinvn[item] = {
-                    vol: element[0] * 1,
-                    close: close,
-                    high: element[2] * 1,
-                    low: element[3] * 1,
-                    change: element[4] * 1,
-                    symbol: item
-                  }
-                }
-              }
-
-              vm.sortBy()
-              vm.$forceUpdate()
-            }
-          }
-        )
-      },
+      
       get_binance: function(transactionPair) {
         var vm = this
+        console.log('get binance data')
         var url = 'wss://stream.binance.com:9443/stream?streams=!miniTicker@arr@3000ms'
         vm.socket(
           url,
@@ -253,7 +196,7 @@
           null,
           function(data) {
             data = data.toLowerCase()
-            var data = JSON.parse(data)
+            data = JSON.parse(data)
             if (!vm.dataMap.binance) {
               vm.dataMap.binance = {}
             }
@@ -527,14 +470,14 @@
           'https://api-pub.bitfinex.com/v2/tickers?symbols=ALL',
           'GET',
           `
-		Accept: */*
-		bfx-flags: 14336
-		Content-Type: application/json;charset=UTF-8
-		DNT: 1
-		Origin: https://www.bitfinex.com
-		Referer: https://www.bitfinex.com/
-		User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/74.0.3729.131 Safari/537.36
-		`
+		  Accept: */*
+		  bfx-flags: 14336
+		  Content-Type: application/json;charset=UTF-8
+		  DNT: 1
+		  Origin: https://www.bitfinex.com
+		  Referer: https://www.bitfinex.com/
+		  User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/74.0.3729.131 Safari/537.36
+		  `
         ).then(function(data) {
           var markets = ['usd', 'btc', 'eth', 'usdt']
           var ignor = ['eur', 'jpy', 'gbp', 'xlm', 'dai'].join('|')
