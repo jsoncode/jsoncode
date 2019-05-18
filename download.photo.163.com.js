@@ -225,7 +225,6 @@ function getOneGroup(groupIndex){
 	})
 }
 function downloadPhoto(groupIndex,photoIndex,typeNum,err_list){
-  console.log(err_list.length);
 	var oneGroup = photoGroupList[groupIndex];
 	var photo = photoList[photoIndex];
 	typeNum= typeNum===undefined?0:typeNum;
