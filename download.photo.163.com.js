@@ -23,6 +23,8 @@
  *  	打开控制台，找到http://photo.163.com下的cookie，进行搜索NTES_SESS
  * 4，在cmd命令行执行：node download.photo.163.com.js 就可以开始下载了。
  */
+"use strict";
+
 // 需要的依赖包
 const fs = require('fs');
 const http = require('http');
@@ -74,7 +76,7 @@ function photoname(photo) {
   /* ----------------------------------
   { id: 数字id,
   s: ?,
-  ourl: 实际显示用的图url,
+  ourl: 原图url,
   ow: 原图宽度,
   oh: 114原图高度,
   murl: 中图url,
@@ -97,6 +99,13 @@ var urlType = {
 	'2':'http://img2.ph.126.net',
 };
 
+var sizeType = {
+  '0':'ourl', // 原图
+  '1':'murl', // 中图
+  '2':'surl', // 小图
+  '3':'turl', // 缩略图
+};
+
 
 var header_common = `
 Accept: */*
@@ -109,7 +118,7 @@ User-Agent: User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/53
 Connection: keep-alive
 Pragma: no-cache
 Cache-Control: no-cache
-`
+`; // For my case, I will need to add `Cookie: ....` here. Not sure for others
 
 
 // 请求过程中缓存的cookie
@@ -204,11 +213,10 @@ function getOneGroup(groupIndex){
 						if (list) {
 							list = list[0].replace(/\'/g,'"').replace(/(\w+):([^,\]\}]+)/g,'"$1":$2');
 							photoList = JSON.parse(list).sort(function(v1,v2){return v1.t-v2.t>0?1:-1});
-              var err_list = [];
-							downloadPhoto(groupIndex,0,0, err_list);
+							downloadPhoto(groupIndex,0,0,0,[]);
 						}else{
 							console.log('未请求到照片列表，可能cookie已失效或当前相册为空');
-              nextRequest();
+							downloadPhoto(groupIndex+1,0,0,0,[]); // keep calm and carry on
 						}
 					},
 					error:function(err){
@@ -224,30 +232,40 @@ function getOneGroup(groupIndex){
 		}
 	})
 }
-function downloadPhoto(groupIndex,photoIndex,typeNum,err_list){
+function downloadPhoto(groupIndex,photoIndex,typeNum,sizeNum,err_list){
 	var oneGroup = photoGroupList[groupIndex];
 	var photo = photoList[photoIndex];
-	typeNum= typeNum===undefined?0:typeNum;
-	photoUrl = urlType[typeNum] + photo.ourl.replace(/^\w/,'');
+	typeNum = typeNum===undefined?0:typeNum;
+	var photoUrl = urlType[typeNum] + photo[sizeType[sizeNum]].replace(/^\w/,'');
+  function download(exif) {
+    backAjax(photoUrl,{
+      success:function (data) {
+        if (exif) {
+          data = updateExif(data,exif);
+        }
+        writeimage(oneGroup, photo, data);
+        if (sizeNum > 0) {
+          err_list.push({photo:photo,error:"size="+sizeNum});
+        }
+        nextRequest();
+      },
+      error:function(err){
+        console.log('图片下载失败 - 重新尝试', oneGroup.name, oneGroup.id , photo.desc, photo.id);
+        if (typeNum<2) {
+          downloadPhoto(groupIndex,photoIndex,typeNum+1,sizeNum,err_list);
+        } else if (sizeNum<3) {
+          console.log('尺寸降级为', sizeNum+1);
+          downloadPhoto(groupIndex,photoIndex,0,sizeNum+1,err_list);
+        } else {
+          err_list.push({photo:photo,error:err});
+          nextRequest();
+        }
+      },
+    })
+  }
 	if (photo.t1===0) {
 		// 没有exif信息
-		backAjax(photoUrl,{
-			success:function (data) {
-        writeimage(oneGroup, photo, data);
-				nextRequest(err_list);
-			},
-			error:function(err){
-				console.log('图片下载失败 重新尝试', oneGroup.name, oneGroup.id , photo.desc, photo.id);
-				if (typeNum<2) {
-					typeNum++;
-					downloadPhoto(groupIndex,photoIndex,typeNum,err_list);
-				}else{
-  				console.log('图片下载失败 已记录', oneGroup.name, oneGroup.id , photo.desc, photo.id);
-          err_list.push({photo:photo,error:err});
-					nextRequest(err_list);
-				}
-			},
-		});
+    download()
 	}else{
 		// 原图
 		// http://img1.ph.126.net/${ourl}
@@ -277,24 +295,7 @@ function downloadPhoto(groupIndex,photoIndex,typeNum,err_list){
 				if (exif) {
 					exif = exif[0].replace(/\'/g,'"').replace(/(\w+):([^,\]\}]+)/g,'"$1":$2');
 					exif = JSON.parse(exif);
-
-					backAjax(photoUrl,{
-						success:function (data) {
-							data = updateExif(data,exif);
-              writeimage(oneGroup, photo, data);
-							nextRequest(err_list);
-						},
-						error:function(err){
-							console.log('图片下载失败 重新尝试', oneGroup.name, oneGroup.id , photo.name, photo.id)
-							if (typeNum<2) {
-								typeNum++;
-								downloadPhoto(groupIndex,photoIndex,typeNum,err_list);
-							}else{
-                err_list.push({group:oneGroup,photo:photo,error:err});
-								nextRequest(err_list);
-							}
-						},
-					})
+          download(exif);
 				}
 			},
 			error:function (err) {
@@ -303,12 +304,11 @@ function downloadPhoto(groupIndex,photoIndex,typeNum,err_list){
 		})
 	}
 
-
-	function nextRequest(err_list){
+	function nextRequest(){
 		if (photoIndex<photoList.length-1) {
 			loadCount++;
 			photoIndex++;
-			downloadPhoto(groupIndex,photoIndex,0,err_list);
+			downloadPhoto(groupIndex,photoIndex,0,0,err_list);
 			pb.render({ completed: loadCount+1, total: allPhotoCount});
 		}else{
       writesummary(oneGroup, JSON.stringify({information: oneGroup, error_list: err_list}));
