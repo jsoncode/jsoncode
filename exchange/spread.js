@@ -279,7 +279,7 @@
 		}))
 
       */
-        var ignorList = ['dta','wpr','wax','lym','tnb','bft','zil','rcn','cnn','req','wtc','man','ast','ors','sbtc','dat','hot',"bnb","btm","hcc","icn","llt","yoyo","ctr","bcpt","arn","gto","zil","ae","chat","etf","atd"]
+        var ignorList = ['ncash','npxs','dta','wpr','wax','lym','tnb','bft','zil','rcn','cnn','req','wtc','man','ast','ors','sbtc','dat','hot',"bnb","btm","hcc","icn","llt","yoyo","ctr","bcpt","arn","gto","zil","ae","chat","etf","atd"]
         var url = 'wss://stream.binance.net/stream?streams=!miniTicker@arr@3000ms'
         vm.socket(
           url,
@@ -412,7 +412,7 @@ JSON.stringify([].slice.call(document.querySelectorAll('.finance_table .body_lis
 	return !(v.querySelectorAll('.action_group .action_btn:not(.disabled)').length==2&&!v.querySelector('.action_group .to-exchange .disabled'))
 }).map(function(v){return v.querySelector('dd:first-child').innerText.trim().toLowerCase()}))
      */
-        var ignorList = ['dta','wpr','wax','lym','tnb','bft','zil','rcn','cnn','req','wtc','man','ast','ors','sbtc','dat','hot',"husd","gusd","tusd","pax","usdc","hb10","icx","ven","phx","adx","bcd","zil","bcx","sbtc","etf","bifi","dgb","cdc","eosdac","ae","inc","gve","eon","eop","meetone","sexc","add","iq","hpt","ong","xtz","hvt","tfuel","bt2","bt1"]
+        var ignorList = ['ncash','npxs','dta','wpr','wax','lym','tnb','bft','zil','rcn','cnn','req','wtc','man','ast','ors','sbtc','dat','hot',"husd","gusd","tusd","pax","usdc","hb10","icx","ven","phx","adx","bcd","zil","bcx","sbtc","etf","bifi","dgb","cdc","eosdac","ae","inc","gve","eon","eop","meetone","sexc","add","iq","hpt","ong","xtz","hvt","tfuel","bt2","bt1"]
         
 
         vm.ajax('https://www.huobi.co/-/x/pro/market/overview5?r='+btoa(new Date().getTime()).toLowerCase().substr(0,6),'GET').then(function(d){
@@ -521,7 +521,7 @@ JSON.stringify([].slice.call(document.querySelectorAll('.finance_table .body_lis
         var vm = this
         var url = 'wss://okexcomreal.bafang.com:10441/websocket'
         var markets = ['usdt', 'btc', 'eth', 'okb']
-        var ignorList = ['dta','wpr','wax','lym','tnb','bft','zil','rcn','cnn','req','wtc','man','ast','ors','sbtc']
+        var ignorList = ['ncash','npxs','dta','wpr','wax','lym','tnb','bft','zil','rcn','cnn','req','wtc','man','ast','ors','sbtc']
         vm.socket(
           url,
           [
@@ -617,7 +617,7 @@ JSON.stringify([].slice.call(document.querySelectorAll('.finance_table .body_lis
         ).then(function(data) {
           var markets = ['usd', 'btc', 'eth', 'usdt']
           var ignor = ['eur', 'jpy', 'gbp', 'xlm', 'dai'].join('|')
-          var ignorList = ['dta','wpr','wax','lym','tnb','bft','zil','rcn','cnn','req','wtc','man','ast','ors','sbtc','dat','hot',"bnb","btm","hcc","icn","llt","yoyo","ctr","bcpt","arn","gto","zil","ae","chat","etf","atd"]
+          var ignorList = ['ncash','npxs','dta','wpr','wax','lym','tnb','bft','zil','rcn','cnn','req','wtc','man','ast','ors','sbtc','dat','hot',"bnb","btm","hcc","icn","llt","yoyo","ctr","bcpt","arn","gto","zil","ae","chat","etf","atd"]
           var reg = new RegExp('(' + ignor + ')$', 'i')
           JSON.parse(data.response).forEach(function(item) {
             item[0] = item[0].toLowerCase()
@@ -1123,7 +1123,6 @@ JSON.stringify([].slice.call(document.querySelectorAll('.finance_table .body_lis
                 'SOP_ETH',
                 'LEMO_ETH',
                 'EON_ETH',
-                'NPXS_ETH',
                 'QKC_ETH',
                 'IOTX_ETH',
                 'RED_ETH',
