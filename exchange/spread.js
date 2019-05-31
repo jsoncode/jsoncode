@@ -25,9 +25,19 @@
   var sckey2 = ''
   var style = document.createElement('style')
   style.innerHTML = `
-      #my-panel{width:100%}
+	  	#my-panel::-webkit-scrollbar{
+		    height: 16px;
+		    width: 16px;
+		    background-color: rgba(200,200,200,0.1);
+		}
+		#my-panel::-webkit-scrollbar-thumb{
+		    background-color: rgba(0,0,0,0.5);
+		}
+      #my-panel{width:800px;height:100%;overflow:auto;position:fixed;top:0;right:0;z-index:2;background:rgba(23, 27, 43, 0.83);color:rgba(180,180,180,0.8);padding:2rem}
       table{width:100%}
-      table thead th {cursor:pointer;text-align:left;}
+	  table thead th {cursor:pointer;text-align:left;}
+	  table a{color:inherit;text-decoration:none}
+	  #msg{color:red;padding:1rem;}
     `
   document.head.appendChild(style)
   var div = document.createElement('div')
@@ -35,27 +45,38 @@
   //   document.body.innerHTML = ''
   document.body.appendChild(div)
   document.getElementById('my-panel').innerHTML = `
+		<div id="msg"></div>
         <div style="width:100%">
           <table>
           <thead>
             <tr>
               <th @click="sortBy('assetPair')">交易对</th>
   
-              <th @click="sortBy('huobi')">huobi</th>
-              <th @click="sortBy('binance')">binance</th>
-              <th @click="sortBy('gateio')">gateio</th>
-              <th @click="sortBy('bitcoinvn')">bitcoinvn</th>
-              <th @click="sortBy('spread')">spread</th>
+              <th @click="sortBy('huobi')">
+              		<a href="https://huobi.co" target="_blank">huobi.co</a>
+              </th>
+              <th @click="sortBy('binance')">
+              		<a href="https://binance.net" target="_blank">binance.net</a>
+              </th>
+              <th @click="sortBy('okex')">
+              		<a href="https://okex.me" target="_blank">okex.me</a>
+              </th>
+              <th @click="sortBy('spread')">价差比例%</th>
             </tr>
           </thead>
           <tbody>
             <tr v-for="item in sortList">
               <td v-text="item.symbol"></td>
   
-              <td v-text="item.huobi_price"></td>
-              <td v-text="item.binance_price"></td>
-              <td v-text="item.gateio_price"></td>
-              <td v-text="item.bitcoinvn_price"></td>
+              <td>
+              		<span v-text="item.huobi_price"></span>
+              </td>
+              <td>
+              		<span v-text="item.binance_price"></span>
+              </td>
+              <td>
+              		<span v-text="item.okex_price"></span>
+              </td>
               <td v-text="item.spread"></td>
             </tr>
           </tbody>
@@ -79,32 +100,31 @@
     },
     mounted: function() {
       var vm = this
-      // vm.ajax(
-      //   'https://www.hbg.com/-/x/pro/v1/settings/chains?r=' + btoa('' + new Date().getTime()).replace(/=/g, ''),
-      //   'GET'
-      // ).then(function(data) {
-      //   var chains = JSON.parse(data.response).data
-      //   chains.forEach(function(item) {
-      //     var key = item['display-name'].toLowerCase()
-      //     vm.usableMap[key] = 1
-      //     vm.usableMap[key.replace(/\d+/gi, '')] = 1
-      //   })
-      // })
-      vm.ajax('http://localhost:8888', 'GET').then(function(data) {
-        data = data.response.split(',')
-        console.log(data)
-        sckey1 = data[0]
-        sckey2 = data[1]
-
-        vm.get_huobi()
-        vm.get_binance()
-        // vm.get_ajax_bitfinex()
-        // vm.get_okex()
-        vm.get_gateio()
-        vm.get_bitcoinvn()
-      })
+      vm.getScKey()
     },
     methods: {
+      getScKey: function() {
+        var vm = this
+        vm.ajax('http://localhost:8888', 'GET')
+          .then(function(data) {
+            data = data.response.split(',')
+            console.log(data)
+            sckey1 = data[0]
+            sckey2 = data[1]
+            a()
+          })
+          .catch(function() {
+            document.getElementById('msg').innerHTML = '没有找到sckey,不影响行情数据'
+            a()
+          })
+        function a() {
+          vm.get_huobi()
+          vm.get_binance()
+          // vm.get_ajax_bitfinex()
+          vm.get_okex()
+          // vm.get_gateio()
+        }
+      },
       setSpread: function(item) {
         var vm = this
         var list = []
@@ -127,7 +147,9 @@
       sortBy: function(type) {
         var vm = this
         vm.sortType = type || vm.sortType
-        vm.sortList = Object.values(vm.allData)
+        vm.sortList = Object.values(vm.allData).filter(function(v){
+        	return v.spread!==undefined
+        })
           .sort(function(v1, v2) {
             if (vm.sortType === 'assetPair') {
               // var len1 = Object.keys(v1).length
@@ -144,15 +166,13 @@
               return v1.okex_price != undefined ? -1 : 1
             } else if (vm.sortType === 'binance') {
               return v1.binance_price != undefined ? -1 : 1
-            } else if (vm.sortType === 'bitcoinvn') {
-              return v1.bitcoinvn_price != undefined ? -1 : 1
             } else if (vm.sortType === 'spread') {
               return v1.spread > v2.spread ? -1 : 1
             }
             return 1
           })
           .filter(function(item) {
-            return true || Object.keys(item).length - 2 > 1 || item.bitcoinvn_price !== undefined
+            return true || Object.keys(item).length - 2 > 1
           })
         var arr = vm.sortList.filter(function(item) {
           return item.spread > 10
@@ -176,13 +196,16 @@
         // }
       },
       ajax: function(url, method, headers) {
-        return new Promise(function(success) {
+        return new Promise(function(successBack, errorBack) {
           GM_xmlhttpRequest({
             method: method.toUpperCase(),
             url: url,
             headers: formatHeaders(headers),
             onload: function(response) {
-              success(response)
+              successBack(response)
+            },
+            onerror: function(err) {
+              errorBack(err)
             }
           })
         })
@@ -243,717 +266,21 @@
           ).then(function(d) {})
         }
       },
-      get_bitcoinvn: function(transactionPair) {
-        var vm = this
-        var url = 'wss://www.bitcoinvn.cloud/socket/v2'
-        vm.socket(
-          url,
-          [
-            { event: 'subscribe', channel: 'sub_market_quotation' }
-            // { symbol: transactionPair, event: 'subscribe', channel: 'sub_depth', limit: 200 },
-            // { symbol: transactionPair, event: 'subscribe', channel: 'sub_trades' }
-          ],
-          null,
-          function(data) {
-            data = JSON.parse(data)
-            if (!vm.dataMap.bitcoinvn) {
-              vm.dataMap.bitcoinvn = {}
-            }
-            if (data.data) {
-              var btc_usdt = data.data.btc_usdt.split(',')[1] * 1
-              var eth_usdt = data.data.eth_usdt.split(',')[1] * 1
-              var usdt_vnd = data.data.usdt_vnd.split(',')[1] * 1
-
-              for (const item in data.data) {
-                if (data.data.hasOwnProperty(item)) {
-                  const str = data.data[item]
-                  var element = str.split(',')
-                  var close = element[1] * 1
-                  var usdtPrice = close
-                  if (item.indexOf('_btc') > -1) {
-                    if (item !== 'btc_usdt') {
-                      usdtPrice = (close * btc_usdt).toFixed(8) * 1
-                    }
-                  } else if (item.indexOf('_vnd') > -1) {
-                    if (item !== 'usdt_vnd') {
-                      usdtPrice = (close / usdt_vnd).toFixed(8) * 1
-                    }
-                  } else if (item.indexOf('_eth') > -1) {
-                    usdtPrice = (close * eth_usdt).toFixed(8) * 1
-                  }
-                  if (!vm.allData[item]) {
-                    vm.allData[item] = {}
-                  }
-                  vm.allData[item] = Object.assign({}, vm.allData[item], {
-                    bitcoinvn_price: usdtPrice,
-                    symbol: item
-                  })
-                  vm.allData[item].spread = vm.setSpread(vm.allData[item])
-                  vm.dataMap.bitcoinvn[item] = {
-                    vol: element[0] * 1,
-                    close: close,
-                    high: element[2] * 1,
-                    low: element[3] * 1,
-                    change: element[4] * 1,
-                    symbol: item
-                  }
-                }
-              }
-
-              vm.sortBy()
-              vm.$forceUpdate()
-            }
-          }
-        )
-      },
       get_binance: function(transactionPair) {
         var vm = this
         console.log('get binance data')
         /** 
      * 
        获取币安排除的货币对
-       JSON.stringify($('.accountInfo-lists >li.ng-scope').map(function(index,item){
-        return {
-          symbol:$(this).find('.items>.coin').text().trim().toLowerCase(),
-          hide:$(this).find('.action>.disabled').length>0
-        }
-      }),null,4)
+       JSON.stringify([].slice.call(document.querySelectorAll('.accountInfo-lists .td')).filter((v)=>{
+			return v.querySelector('.enableTip .icon-warn')	
+		}).map((v)=>{
+			return v.querySelector('.items .coin').innerText.trim().toLowerCase()
+		}))
 
       */
-        var ignorList = {
-          '0': { symbol: 'mda', hide: false },
-          '1': { symbol: 'iota', hide: true },
-          '2': { symbol: 'ltc', hide: false },
-          '3': { symbol: 'bcx', hide: true },
-          '4': { symbol: 'usdt', hide: false },
-          '5': { symbol: 'bnb', hide: false },
-          '6': { symbol: 'bcd', hide: false },
-          '7': { symbol: 'btc', hide: false },
-          '8': { symbol: 'sbtc', hide: true },
-          '9': { symbol: 'neo', hide: false },
-          '10': { symbol: 'eth', hide: false },
-          '11': { symbol: 'qtum', hide: false },
-          '12': { symbol: 'eos', hide: false },
-          '13': { symbol: 'snt', hide: false },
-          '14': { symbol: 'bnt', hide: false },
-          '15': { symbol: 'gas', hide: false },
-          '16': { symbol: 'btm', hide: true },
-          '17': { symbol: 'hcc', hide: true },
-          '18': { symbol: 'oax', hide: false },
-          '19': { symbol: 'dnt', hide: false },
-          '20': { symbol: 'mco', hide: false },
-          '21': { symbol: 'icn', hide: true },
-          '22': { symbol: 'zrx', hide: false },
-          '23': { symbol: 'omg', hide: false },
-          '24': { symbol: 'wtc', hide: false },
-          '25': { symbol: 'lrc', hide: true },
-          '26': { symbol: 'llt', hide: true },
-          '27': { symbol: 'yoyo', hide: true },
-          '28': { symbol: 'trx', hide: false },
-          '29': { symbol: 'strat', hide: false },
-          '30': { symbol: 'sngls', hide: false },
-          '31': { symbol: 'bqx', hide: false },
-          '32': { symbol: 'knc', hide: false },
-          '33': { symbol: 'snm', hide: false },
-          '34': { symbol: 'fun', hide: false },
-          '35': { symbol: 'link', hide: false },
-          '36': { symbol: 'xvg', hide: true },
-          '37': { symbol: 'ctr', hide: true },
-          '38': { symbol: 'salt', hide: false },
-          '39': { symbol: 'sub', hide: false },
-          '40': { symbol: 'etc', hide: false },
-          '41': { symbol: 'mtl', hide: false },
-          '42': { symbol: 'mth', hide: false },
-          '43': { symbol: 'eng', hide: false },
-          '44': { symbol: 'ast', hide: false },
-          '45': { symbol: 'dash', hide: false },
-          '46': { symbol: 'btg', hide: false },
-          '47': { symbol: 'evx', hide: false },
-          '48': { symbol: 'req', hide: false },
-          '49': { symbol: 'vib', hide: false },
-          '50': { symbol: 'powr', hide: false },
-          '51': { symbol: 'ark', hide: false },
-          '52': { symbol: 'xrp', hide: false },
-          '53': { symbol: 'mod', hide: false },
-          '54': { symbol: 'enj', hide: false },
-          '55': { symbol: 'storj', hide: false },
-          '56': { symbol: 'kmd', hide: false },
-          '57': { symbol: 'rcn', hide: false },
-          '58': { symbol: 'nuls', hide: false },
-          '59': { symbol: 'rdn', hide: false },
-          '60': { symbol: 'xmr', hide: false },
-          '61': { symbol: 'dlt', hide: false },
-          '62': { symbol: 'amb', hide: false },
-          '63': { symbol: 'bat', hide: false },
-          '64': { symbol: 'zec', hide: false },
-          '65': { symbol: 'bcpt', hide: false },
-          '66': { symbol: 'arn', hide: false },
-          '67': { symbol: 'gvt', hide: false },
-          '68': { symbol: 'cdt', hide: false },
-          '69': { symbol: 'gxs', hide: true },
-          '70': { symbol: 'poe', hide: false },
-          '71': { symbol: 'qsp', hide: false },
-          '72': { symbol: 'bts', hide: true },
-          '73': { symbol: 'xzc', hide: false },
-          '74': { symbol: 'lsk', hide: false },
-          '75': { symbol: 'tnt', hide: false },
-          '76': { symbol: 'fuel', hide: false },
-          '77': { symbol: 'mana', hide: false },
-          '78': { symbol: 'dgd', hide: false },
-          '79': { symbol: 'adx', hide: false },
-          '80': { symbol: 'ada', hide: false },
-          '81': { symbol: 'ppt', hide: false },
-          '82': { symbol: 'cmt', hide: true },
-          '83': { symbol: 'xlm', hide: true },
-          '84': { symbol: 'cnd', hide: false },
-          '85': { symbol: 'lend', hide: false },
-          '86': { symbol: 'wabi', hide: false },
-          '87': { symbol: 'waves', hide: false },
-          '88': { symbol: 'tnb', hide: false },
-          '89': { symbol: 'gto', hide: false },
-          '90': { symbol: 'icx', hide: false },
-          '91': { symbol: 'ost', hide: false },
-          '92': { symbol: 'elf', hide: false },
-          '93': { symbol: 'aion', hide: false },
-          '94': { symbol: 'zil', hide: true },
-          '95': { symbol: 'bchsv', hide: false },
-          '96': { symbol: 'iotx', hide: false },
-          '97': { symbol: 'hot', hide: false },
-          '98': { symbol: 'xem', hide: false },
-          '99': { symbol: 'ren', hide: false },
-          '100': { symbol: 'agi', hide: false },
-          '101': { symbol: 'rlc', hide: false },
-          '102': { symbol: 'dock', hide: false },
-          '103': { symbol: 'wpr', hide: false },
-          '104': { symbol: 'usds', hide: false },
-          '105': { symbol: 'sc', hide: false },
-          '106': { symbol: 'vtho', hide: false },
-          '107': { symbol: 'npxs', hide: false },
-          '108': { symbol: 'cvc', hide: false },
-          '109': { symbol: 'grs', hide: false },
-          '110': { symbol: 'tfuel', hide: true },
-          '111': { symbol: 'steem', hide: false },
-          '112': { symbol: 'phx', hide: false },
-          '113': { symbol: 'rep', hide: false },
-          '114': { symbol: 'loom', hide: false },
-          '115': { symbol: 'matic', hide: false },
-          '116': { symbol: 'nas', hide: true },
-          '117': { symbol: 'ae', hide: true },
-          '118': { symbol: 'go', hide: false },
-          '119': { symbol: 'data', hide: false },
-          '120': { symbol: 'zen', hide: false },
-          '121': { symbol: 'meetone', hide: true },
-          '122': { symbol: 'blz', hide: false },
-          '123': { symbol: 'rvn', hide: false },
-          '124': { symbol: 'theta', hide: false },
-          '125': { symbol: 'nebl', hide: false },
-          '126': { symbol: 'mft', hide: false },
-          '127': { symbol: 'ncash', hide: false },
-          '128': { symbol: 'usdc', hide: false },
-          '129': { symbol: 'vibe', hide: false },
-          '130': { symbol: 'dent', hide: false },
-          '131': { symbol: 'ont', hide: false },
-          '132': { symbol: 'bchabc', hide: false },
-          '133': { symbol: 'ardr', hide: false },
-          '134': { symbol: 'storm', hide: false },
-          '135': { symbol: 'cbm', hide: true },
-          '136': { symbol: 'qkc', hide: false },
-          '137': { symbol: 'chat', hide: true },
-          '138': { symbol: 'vet', hide: false },
-          '139': { symbol: 'wan', hide: false },
-          '140': { symbol: 'btt', hide: false },
-          '141': { symbol: 'nxs', hide: false },
-          '142': { symbol: 'ins', hide: false },
-          '143': { symbol: 'poly', hide: false },
-          '144': { symbol: 'qlc', hide: false },
-          '145': { symbol: 'fet', hide: false },
-          '146': { symbol: 'etf', hide: true },
-          '147': { symbol: 'eon', hide: true },
-          '148': { symbol: 'iost', hide: false },
-          '149': { symbol: 'ong', hide: false },
-          '150': { symbol: 'key', hide: false },
-          '151': { symbol: 'gnt', hide: false },
-          '152': { symbol: 'cloak', hide: false },
-          '153': { symbol: 'celr', hide: false },
-          '154': { symbol: 'nano', hide: false },
-          '155': { symbol: 'hc', hide: false },
-          '156': { symbol: 'tusd', hide: false },
-          '157': { symbol: 'atom', hide: false },
-          '158': { symbol: 'add', hide: true },
-          '159': { symbol: 'via', hide: false },
-          '160': { symbol: 'pax', hide: false },
-          '161': { symbol: 'sky', hide: false },
-          '162': { symbol: 'brd', hide: false },
-          '163': { symbol: 'atd', hide: true },
-          '164': { symbol: 'sys', hide: false },
-          '165': { symbol: 'dcr', hide: true },
-          '166': { symbol: 'eop', hide: true },
-          '167': { symbol: 'poa', hide: false },
-          '168': { symbol: 'mith', hide: false },
-          '169': { symbol: 'lun', hide: false },
-          '170': { symbol: 'iq', hide: true },
-          '171': { symbol: 'edo', hide: false },
-          '172': { symbol: 'wings', hide: false },
-          '173': { symbol: 'nav', hide: true },
-          '174': { symbol: 'trig', hide: true },
-          '175': { symbol: 'appc', hide: false },
-          '176': { symbol: 'pivx', hide: true },
-          length: 177,
-          prevObject: {
-            '0': { symbol: 'mda', hide: false },
-            '1': { symbol: 'iota', hide: true },
-            '2': { symbol: 'ltc', hide: false },
-            '3': { symbol: 'bcx', hide: true },
-            '4': { symbol: 'usdt', hide: false },
-            '5': { symbol: 'bnb', hide: false },
-            '6': { symbol: 'bcd', hide: false },
-            '7': { symbol: 'btc', hide: false },
-            '8': { symbol: 'sbtc', hide: true },
-            '9': { symbol: 'neo', hide: false },
-            '10': { symbol: 'eth', hide: false },
-            '11': { symbol: 'qtum', hide: false },
-            '12': { symbol: 'eos', hide: false },
-            '13': { symbol: 'snt', hide: false },
-            '14': { symbol: 'bnt', hide: false },
-            '15': { symbol: 'gas', hide: false },
-            '16': { symbol: 'btm', hide: true },
-            '17': { symbol: 'hcc', hide: true },
-            '18': { symbol: 'oax', hide: false },
-            '19': { symbol: 'dnt', hide: false },
-            '20': { symbol: 'mco', hide: false },
-            '21': { symbol: 'icn', hide: true },
-            '22': { symbol: 'zrx', hide: false },
-            '23': { symbol: 'omg', hide: false },
-            '24': { symbol: 'wtc', hide: false },
-            '25': { symbol: 'lrc', hide: true },
-            '26': { symbol: 'llt', hide: true },
-            '27': { symbol: 'yoyo', hide: true },
-            '28': { symbol: 'trx', hide: false },
-            '29': { symbol: 'strat', hide: false },
-            '30': { symbol: 'sngls', hide: false },
-            '31': { symbol: 'bqx', hide: false },
-            '32': { symbol: 'knc', hide: false },
-            '33': { symbol: 'snm', hide: false },
-            '34': { symbol: 'fun', hide: false },
-            '35': { symbol: 'link', hide: false },
-            '36': { symbol: 'xvg', hide: true },
-            '37': { symbol: 'ctr', hide: true },
-            '38': { symbol: 'salt', hide: false },
-            '39': { symbol: 'sub', hide: false },
-            '40': { symbol: 'etc', hide: false },
-            '41': { symbol: 'mtl', hide: false },
-            '42': { symbol: 'mth', hide: false },
-            '43': { symbol: 'eng', hide: false },
-            '44': { symbol: 'ast', hide: false },
-            '45': { symbol: 'dash', hide: false },
-            '46': { symbol: 'btg', hide: false },
-            '47': { symbol: 'evx', hide: false },
-            '48': { symbol: 'req', hide: false },
-            '49': { symbol: 'vib', hide: false },
-            '50': { symbol: 'powr', hide: false },
-            '51': { symbol: 'ark', hide: false },
-            '52': { symbol: 'xrp', hide: false },
-            '53': { symbol: 'mod', hide: false },
-            '54': { symbol: 'enj', hide: false },
-            '55': { symbol: 'storj', hide: false },
-            '56': { symbol: 'kmd', hide: false },
-            '57': { symbol: 'rcn', hide: false },
-            '58': { symbol: 'nuls', hide: false },
-            '59': { symbol: 'rdn', hide: false },
-            '60': { symbol: 'xmr', hide: false },
-            '61': { symbol: 'dlt', hide: false },
-            '62': { symbol: 'amb', hide: false },
-            '63': { symbol: 'bat', hide: false },
-            '64': { symbol: 'zec', hide: false },
-            '65': { symbol: 'bcpt', hide: false },
-            '66': { symbol: 'arn', hide: false },
-            '67': { symbol: 'gvt', hide: false },
-            '68': { symbol: 'cdt', hide: false },
-            '69': { symbol: 'gxs', hide: true },
-            '70': { symbol: 'poe', hide: false },
-            '71': { symbol: 'qsp', hide: false },
-            '72': { symbol: 'bts', hide: true },
-            '73': { symbol: 'xzc', hide: false },
-            '74': { symbol: 'lsk', hide: false },
-            '75': { symbol: 'tnt', hide: false },
-            '76': { symbol: 'fuel', hide: false },
-            '77': { symbol: 'mana', hide: false },
-            '78': { symbol: 'dgd', hide: false },
-            '79': { symbol: 'adx', hide: false },
-            '80': { symbol: 'ada', hide: false },
-            '81': { symbol: 'ppt', hide: false },
-            '82': { symbol: 'cmt', hide: true },
-            '83': { symbol: 'xlm', hide: true },
-            '84': { symbol: 'cnd', hide: false },
-            '85': { symbol: 'lend', hide: false },
-            '86': { symbol: 'wabi', hide: false },
-            '87': { symbol: 'waves', hide: false },
-            '88': { symbol: 'tnb', hide: false },
-            '89': { symbol: 'gto', hide: false },
-            '90': { symbol: 'icx', hide: false },
-            '91': { symbol: 'ost', hide: false },
-            '92': { symbol: 'elf', hide: false },
-            '93': { symbol: 'aion', hide: false },
-            '94': { symbol: 'zil', hide: true },
-            '95': { symbol: 'bchsv', hide: false },
-            '96': { symbol: 'iotx', hide: false },
-            '97': { symbol: 'hot', hide: false },
-            '98': { symbol: 'xem', hide: false },
-            '99': { symbol: 'ren', hide: false },
-            '100': { symbol: 'agi', hide: false },
-            '101': { symbol: 'rlc', hide: false },
-            '102': { symbol: 'dock', hide: false },
-            '103': { symbol: 'wpr', hide: false },
-            '104': { symbol: 'usds', hide: false },
-            '105': { symbol: 'sc', hide: false },
-            '106': { symbol: 'vtho', hide: false },
-            '107': { symbol: 'npxs', hide: false },
-            '108': { symbol: 'cvc', hide: false },
-            '109': { symbol: 'grs', hide: false },
-            '110': { symbol: 'tfuel', hide: true },
-            '111': { symbol: 'steem', hide: false },
-            '112': { symbol: 'phx', hide: false },
-            '113': { symbol: 'rep', hide: false },
-            '114': { symbol: 'loom', hide: false },
-            '115': { symbol: 'matic', hide: false },
-            '116': { symbol: 'nas', hide: true },
-            '117': { symbol: 'ae', hide: true },
-            '118': { symbol: 'go', hide: false },
-            '119': { symbol: 'data', hide: false },
-            '120': { symbol: 'zen', hide: false },
-            '121': { symbol: 'meetone', hide: true },
-            '122': { symbol: 'blz', hide: false },
-            '123': { symbol: 'rvn', hide: false },
-            '124': { symbol: 'theta', hide: false },
-            '125': { symbol: 'nebl', hide: false },
-            '126': { symbol: 'mft', hide: false },
-            '127': { symbol: 'ncash', hide: false },
-            '128': { symbol: 'usdc', hide: false },
-            '129': { symbol: 'vibe', hide: false },
-            '130': { symbol: 'dent', hide: false },
-            '131': { symbol: 'ont', hide: false },
-            '132': { symbol: 'bchabc', hide: false },
-            '133': { symbol: 'ardr', hide: false },
-            '134': { symbol: 'storm', hide: false },
-            '135': { symbol: 'cbm', hide: true },
-            '136': { symbol: 'qkc', hide: false },
-            '137': { symbol: 'chat', hide: true },
-            '138': { symbol: 'vet', hide: false },
-            '139': { symbol: 'wan', hide: false },
-            '140': { symbol: 'btt', hide: false },
-            '141': { symbol: 'nxs', hide: false },
-            '142': { symbol: 'ins', hide: false },
-            '143': { symbol: 'poly', hide: false },
-            '144': { symbol: 'qlc', hide: false },
-            '145': { symbol: 'fet', hide: false },
-            '146': { symbol: 'etf', hide: true },
-            '147': { symbol: 'eon', hide: true },
-            '148': { symbol: 'iost', hide: false },
-            '149': { symbol: 'ong', hide: false },
-            '150': { symbol: 'key', hide: false },
-            '151': { symbol: 'gnt', hide: false },
-            '152': { symbol: 'cloak', hide: false },
-            '153': { symbol: 'celr', hide: false },
-            '154': { symbol: 'nano', hide: false },
-            '155': { symbol: 'hc', hide: false },
-            '156': { symbol: 'tusd', hide: false },
-            '157': { symbol: 'atom', hide: false },
-            '158': { symbol: 'add', hide: true },
-            '159': { symbol: 'via', hide: false },
-            '160': { symbol: 'pax', hide: false },
-            '161': { symbol: 'sky', hide: false },
-            '162': { symbol: 'brd', hide: false },
-            '163': { symbol: 'atd', hide: true },
-            '164': { symbol: 'sys', hide: false },
-            '165': { symbol: 'dcr', hide: true },
-            '166': { symbol: 'eop', hide: true },
-            '167': { symbol: 'poa', hide: false },
-            '168': { symbol: 'mith', hide: false },
-            '169': { symbol: 'lun', hide: false },
-            '170': { symbol: 'iq', hide: true },
-            '171': { symbol: 'edo', hide: false },
-            '172': { symbol: 'wings', hide: false },
-            '173': { symbol: 'nav', hide: true },
-            '174': { symbol: 'trig', hide: true },
-            '175': { symbol: 'appc', hide: false },
-            '176': { symbol: 'pivx', hide: true },
-            length: 177,
-            prevObject: {
-              '0': { jQuery110208807891931635987: 159 },
-              '1': { jQuery110208807891931635987: 167 },
-              '2': { jQuery110208807891931635987: 175 },
-              '3': { jQuery110208807891931635987: 183 },
-              '4': { jQuery110208807891931635987: 191 },
-              '5': { jQuery110208807891931635987: 199 },
-              '6': { jQuery110208807891931635987: 207 },
-              '7': { jQuery110208807891931635987: 215 },
-              '8': { jQuery110208807891931635987: 223 },
-              '9': { jQuery110208807891931635987: 231 },
-              '10': { jQuery110208807891931635987: 239 },
-              '11': { jQuery110208807891931635987: 247 },
-              '12': { jQuery110208807891931635987: 255 },
-              '13': { jQuery110208807891931635987: 263 },
-              '14': { jQuery110208807891931635987: 271 },
-              '15': { jQuery110208807891931635987: 279 },
-              '16': { jQuery110208807891931635987: 287 },
-              '17': { jQuery110208807891931635987: 295 },
-              '18': { jQuery110208807891931635987: 303 },
-              '19': { jQuery110208807891931635987: 311 },
-              '20': { jQuery110208807891931635987: 319 },
-              '21': { jQuery110208807891931635987: 327 },
-              '22': { jQuery110208807891931635987: 335 },
-              '23': { jQuery110208807891931635987: 343 },
-              '24': { jQuery110208807891931635987: 351 },
-              '25': { jQuery110208807891931635987: 359 },
-              '26': { jQuery110208807891931635987: 367 },
-              '27': { jQuery110208807891931635987: 375 },
-              '28': { jQuery110208807891931635987: 383 },
-              '29': { jQuery110208807891931635987: 391 },
-              '30': { jQuery110208807891931635987: 399 },
-              '31': { jQuery110208807891931635987: 407 },
-              '32': { jQuery110208807891931635987: 415 },
-              '33': { jQuery110208807891931635987: 423 },
-              '34': { jQuery110208807891931635987: 431 },
-              '35': { jQuery110208807891931635987: 439 },
-              '36': { jQuery110208807891931635987: 447 },
-              '37': { jQuery110208807891931635987: 455 },
-              '38': { jQuery110208807891931635987: 463 },
-              '39': { jQuery110208807891931635987: 471 },
-              '40': { jQuery110208807891931635987: 479 },
-              '41': { jQuery110208807891931635987: 487 },
-              '42': { jQuery110208807891931635987: 495 },
-              '43': { jQuery110208807891931635987: 503 },
-              '44': { jQuery110208807891931635987: 511 },
-              '45': { jQuery110208807891931635987: 519 },
-              '46': { jQuery110208807891931635987: 527 },
-              '47': { jQuery110208807891931635987: 535 },
-              '48': { jQuery110208807891931635987: 543 },
-              '49': { jQuery110208807891931635987: 551 },
-              '50': { jQuery110208807891931635987: 559 },
-              '51': { jQuery110208807891931635987: 567 },
-              '52': { jQuery110208807891931635987: 575 },
-              '53': { jQuery110208807891931635987: 583 },
-              '54': { jQuery110208807891931635987: 591 },
-              '55': { jQuery110208807891931635987: 599 },
-              '56': { jQuery110208807891931635987: 607 },
-              '57': { jQuery110208807891931635987: 615 },
-              '58': { jQuery110208807891931635987: 623 },
-              '59': { jQuery110208807891931635987: 631 },
-              '60': { jQuery110208807891931635987: 639 },
-              '61': { jQuery110208807891931635987: 647 },
-              '62': { jQuery110208807891931635987: 655 },
-              '63': { jQuery110208807891931635987: 663 },
-              '64': { jQuery110208807891931635987: 671 },
-              '65': { jQuery110208807891931635987: 679 },
-              '66': { jQuery110208807891931635987: 687 },
-              '67': { jQuery110208807891931635987: 695 },
-              '68': { jQuery110208807891931635987: 703 },
-              '69': { jQuery110208807891931635987: 711 },
-              '70': { jQuery110208807891931635987: 719 },
-              '71': { jQuery110208807891931635987: 727 },
-              '72': { jQuery110208807891931635987: 735 },
-              '73': { jQuery110208807891931635987: 743 },
-              '74': { jQuery110208807891931635987: 751 },
-              '75': { jQuery110208807891931635987: 759 },
-              '76': { jQuery110208807891931635987: 767 },
-              '77': { jQuery110208807891931635987: 775 },
-              '78': { jQuery110208807891931635987: 783 },
-              '79': { jQuery110208807891931635987: 791 },
-              '80': { jQuery110208807891931635987: 799 },
-              '81': { jQuery110208807891931635987: 807 },
-              '82': { jQuery110208807891931635987: 815 },
-              '83': { jQuery110208807891931635987: 823 },
-              '84': { jQuery110208807891931635987: 831 },
-              '85': { jQuery110208807891931635987: 839 },
-              '86': { jQuery110208807891931635987: 847 },
-              '87': { jQuery110208807891931635987: 855 },
-              '88': { jQuery110208807891931635987: 863 },
-              '89': { jQuery110208807891931635987: 871 },
-              '90': { jQuery110208807891931635987: 879 },
-              '91': { jQuery110208807891931635987: 887 },
-              '92': { jQuery110208807891931635987: 895 },
-              '93': { jQuery110208807891931635987: 903 },
-              '94': { jQuery110208807891931635987: 911 },
-              '95': { jQuery110208807891931635987: 919 },
-              '96': { jQuery110208807891931635987: 927 },
-              '97': { jQuery110208807891931635987: 935 },
-              '98': { jQuery110208807891931635987: 943 },
-              '99': { jQuery110208807891931635987: 951 },
-              '100': { jQuery110208807891931635987: 959 },
-              '101': { jQuery110208807891931635987: 967 },
-              '102': { jQuery110208807891931635987: 975 },
-              '103': { jQuery110208807891931635987: 983 },
-              '104': { jQuery110208807891931635987: 991 },
-              '105': { jQuery110208807891931635987: 999 },
-              '106': { jQuery110208807891931635987: 1007 },
-              '107': { jQuery110208807891931635987: 1015 },
-              '108': { jQuery110208807891931635987: 1023 },
-              '109': { jQuery110208807891931635987: 1031 },
-              '110': { jQuery110208807891931635987: 1039 },
-              '111': { jQuery110208807891931635987: 1047 },
-              '112': { jQuery110208807891931635987: 1055 },
-              '113': { jQuery110208807891931635987: 1063 },
-              '114': { jQuery110208807891931635987: 1071 },
-              '115': { jQuery110208807891931635987: 1079 },
-              '116': { jQuery110208807891931635987: 1087 },
-              '117': { jQuery110208807891931635987: 1095 },
-              '118': { jQuery110208807891931635987: 1103 },
-              '119': { jQuery110208807891931635987: 1111 },
-              '120': { jQuery110208807891931635987: 1119 },
-              '121': { jQuery110208807891931635987: 1127 },
-              '122': { jQuery110208807891931635987: 1135 },
-              '123': { jQuery110208807891931635987: 1143 },
-              '124': { jQuery110208807891931635987: 1151 },
-              '125': { jQuery110208807891931635987: 1159 },
-              '126': { jQuery110208807891931635987: 1167 },
-              '127': { jQuery110208807891931635987: 1175 },
-              '128': { jQuery110208807891931635987: 1183 },
-              '129': { jQuery110208807891931635987: 1191 },
-              '130': { jQuery110208807891931635987: 1199 },
-              '131': { jQuery110208807891931635987: 1207 },
-              '132': { jQuery110208807891931635987: 1215 },
-              '133': { jQuery110208807891931635987: 1223 },
-              '134': { jQuery110208807891931635987: 1231 },
-              '135': { jQuery110208807891931635987: 1239 },
-              '136': { jQuery110208807891931635987: 1247 },
-              '137': { jQuery110208807891931635987: 1255 },
-              '138': { jQuery110208807891931635987: 1263 },
-              '139': { jQuery110208807891931635987: 1271 },
-              '140': { jQuery110208807891931635987: 1279 },
-              '141': { jQuery110208807891931635987: 1287 },
-              '142': { jQuery110208807891931635987: 1295 },
-              '143': { jQuery110208807891931635987: 1303 },
-              '144': { jQuery110208807891931635987: 1311 },
-              '145': { jQuery110208807891931635987: 1319 },
-              '146': { jQuery110208807891931635987: 1327 },
-              '147': { jQuery110208807891931635987: 1335 },
-              '148': { jQuery110208807891931635987: 1343 },
-              '149': { jQuery110208807891931635987: 1351 },
-              '150': { jQuery110208807891931635987: 1359 },
-              '151': { jQuery110208807891931635987: 1367 },
-              '152': { jQuery110208807891931635987: 1375 },
-              '153': { jQuery110208807891931635987: 1383 },
-              '154': { jQuery110208807891931635987: 1391 },
-              '155': { jQuery110208807891931635987: 1399 },
-              '156': { jQuery110208807891931635987: 1407 },
-              '157': { jQuery110208807891931635987: 1415 },
-              '158': { jQuery110208807891931635987: 1423 },
-              '159': { jQuery110208807891931635987: 1431 },
-              '160': { jQuery110208807891931635987: 1439 },
-              '161': { jQuery110208807891931635987: 1447 },
-              '162': { jQuery110208807891931635987: 1455 },
-              '163': { jQuery110208807891931635987: 1463 },
-              '164': { jQuery110208807891931635987: 1471 },
-              '165': { jQuery110208807891931635987: 1479 },
-              '166': { jQuery110208807891931635987: 1487 },
-              '167': { jQuery110208807891931635987: 1495 },
-              '168': { jQuery110208807891931635987: 1503 },
-              '169': { jQuery110208807891931635987: 1511 },
-              '170': { jQuery110208807891931635987: 1519 },
-              '171': { jQuery110208807891931635987: 1527 },
-              '172': { jQuery110208807891931635987: 1535 },
-              '173': { jQuery110208807891931635987: 1543 },
-              '174': { jQuery110208807891931635987: 1551 },
-              '175': { jQuery110208807891931635987: 1559 },
-              '176': { jQuery110208807891931635987: 1567 },
-              length: 177,
-              prevObject: {
-                '0': {
-                  location: {
-                    href: 'https://www.binance.com/userCenter/balances.html',
-                    ancestorOrigins: {},
-                    origin: 'https://www.binance.com',
-                    protocol: 'https:',
-                    host: 'www.binance.com',
-                    hostname: 'www.binance.com',
-                    port: '',
-                    pathname: '/userCenter/balances.html',
-                    search: '',
-                    hash: ''
-                  },
-                  jQuery110208807891931635987: 1,
-                  _reactListenersID480654554368837: 0
-                },
-                context: {
-                  location: {
-                    href: 'https://www.binance.com/userCenter/balances.html',
-                    ancestorOrigins: {},
-                    origin: 'https://www.binance.com',
-                    protocol: 'https:',
-                    host: 'www.binance.com',
-                    hostname: 'www.binance.com',
-                    port: '',
-                    pathname: '/userCenter/balances.html',
-                    search: '',
-                    hash: ''
-                  },
-                  jQuery110208807891931635987: 1,
-                  _reactListenersID480654554368837: 0
-                },
-                length: 1
-              },
-              context: {
-                location: {
-                  href: 'https://www.binance.com/userCenter/balances.html',
-                  ancestorOrigins: {},
-                  origin: 'https://www.binance.com',
-                  protocol: 'https:',
-                  host: 'www.binance.com',
-                  hostname: 'www.binance.com',
-                  port: '',
-                  pathname: '/userCenter/balances.html',
-                  search: '',
-                  hash: ''
-                },
-                jQuery110208807891931635987: 1,
-                _reactListenersID480654554368837: 0
-              },
-              selector: '.accountInfo-lists >li.ng-scope'
-            },
-            context: {
-              location: {
-                href: 'https://www.binance.com/userCenter/balances.html',
-                ancestorOrigins: {},
-                origin: 'https://www.binance.com',
-                protocol: 'https:',
-                host: 'www.binance.com',
-                hostname: 'www.binance.com',
-                port: '',
-                pathname: '/userCenter/balances.html',
-                search: '',
-                hash: ''
-              },
-              jQuery110208807891931635987: 1,
-              _reactListenersID480654554368837: 0
-            }
-          },
-          context: {
-            location: {
-              href: 'https://www.binance.com/userCenter/balances.html',
-              ancestorOrigins: {},
-              origin: 'https://www.binance.com',
-              protocol: 'https:',
-              host: 'www.binance.com',
-              hostname: 'www.binance.com',
-              port: '',
-              pathname: '/userCenter/balances.html',
-              search: '',
-              hash: ''
-            },
-            jQuery110208807891931635987: 1,
-            _reactListenersID480654554368837: 0
-          }
-        }
-        var ignorMap = {}
-        for (const key in ignorList) {
-          if (ignorList.hasOwnProperty(key)) {
-            const element = ignorList[key]
-            if (!element.hide) {
-              ignorMap[element.symbol] = 1
-            }
-          }
-        }
-        var url = 'wss://stream.binance.com:9443/stream?streams=!miniTicker@arr@3000ms'
+        var ignorList = ['dta','wpr','wax','lym','tnb','bft','zil','rcn','cnn','req','wtc','man','ast','ors','sbtc','dat','hot',"bnb","btm","hcc","icn","llt","yoyo","ctr","bcpt","arn","gto","zil","ae","chat","etf","atd"]
+        var url = 'wss://stream.binance.net/stream?streams=!miniTicker@arr@3000ms'
         vm.socket(
           url,
           [
@@ -982,7 +309,7 @@
                   return
                 }
                 item.s = item.s.replace(current, '_' + current)
-                if (ignorMap[item.s.split('_')[0]] === undefined) {
+                if (ignorList.indexOf(item.s.split('_')[0])>-1) {
                   return
                 }
                 vm.dataMap.binance[item.s] = {
@@ -1077,327 +404,124 @@
         var vm = this
 
         var url = 'wss://api.huobi.br.com/ws'
-        var markets = ['usdt', 'husd', 'btc', 'eth', 'ht']
-
+        var markets = ['usdt', 'btc', 'eth', 'ht']
+// 下面代码可以获取屏蔽的货币名称，因为这些货币，在火币不能 充值或体现或交易，所以是需要排除掉
         /*
-     JSON.stringify([].slice.call($$('#table_list .body_list ')).map(function(item){
-      return {
-        symbol:item.querySelector('dd.uppercase').innerText.trim().toLowerCase(),
-        hide:item.querySelectorAll('.action_group>.action_btn.disabled').length>0
-      }
-    }).filter(function(item){
-      return !item.hide
-    }),null,4)
-     */
-        var ignorList = [
-          { symbol: 'usdt', hide: false },
-          { symbol: 'husd', hide: false },
-          { symbol: 'btc', hide: false },
-          { symbol: 'eth', hide: false },
-          { symbol: 'eos', hide: false },
-          { symbol: 'ht', hide: false },
-          { symbol: 'gusd', hide: false },
-          { symbol: 'tusd', hide: false },
-          { symbol: 'pax', hide: false },
-          { symbol: 'usdc', hide: false },
-          { symbol: 'xrp', hide: false },
-          { symbol: 'bch', hide: false },
-          { symbol: 'ltc', hide: false },
-          { symbol: 'xmr', hide: false },
-          { symbol: 'etc', hide: false },
-          { symbol: 'ada', hide: false },
-          { symbol: 'dash', hide: false },
-          { symbol: 'zec', hide: false },
-          { symbol: 'iota', hide: false },
-          { symbol: 'neo', hide: false },
-          { symbol: 'trx', hide: false },
-          { symbol: 'qtum', hide: false },
-          { symbol: 'xem', hide: false },
-          { symbol: 'omg', hide: false },
-          { symbol: 'hc', hide: false },
-          { symbol: 'lsk', hide: false },
-          { symbol: 'dcr', hide: false },
-          { symbol: 'btg', hide: false },
-          { symbol: 'steem', hide: false },
-          { symbol: 'bts', hide: false },
-          { symbol: 'waves', hide: false },
-          { symbol: 'snt', hide: false },
-          { symbol: 'salt', hide: false },
-          { symbol: 'gnt', hide: false },
-          { symbol: 'cmt', hide: false },
-          { symbol: 'btm', hide: false },
-          { symbol: 'pay', hide: false },
-          { symbol: 'knc', hide: false },
-          { symbol: 'powr', hide: false },
-          { symbol: 'bat', hide: false },
-          { symbol: 'dgd', hide: false },
-          { symbol: 'vet', hide: false },
-          { symbol: 'qash', hide: false },
-          { symbol: 'xzc', hide: false },
-          { symbol: 'zrx', hide: false },
-          { symbol: 'gas', hide: false },
-          { symbol: 'mana', hide: false },
-          { symbol: 'eng', hide: false },
-          { symbol: 'cvc', hide: false },
-          { symbol: 'mco', hide: false },
-          { symbol: 'mtl', hide: false },
-          { symbol: 'rdn', hide: false },
-          { symbol: 'storj', hide: false },
-          { symbol: 'chat', hide: false },
-          { symbol: 'link', hide: false },
-          { symbol: 'srn', hide: false },
-          { symbol: 'act', hide: false },
-          { symbol: 'tnb', hide: false },
-          { symbol: 'qsp', hide: false },
-          { symbol: 'req', hide: false },
-          { symbol: 'phx', hide: false },
-          { symbol: 'appc', hide: false },
-          { symbol: 'rcn', hide: false },
-          { symbol: 'smt', hide: false },
-          { symbol: 'tnt', hide: false },
-          { symbol: 'ost', hide: false },
-          { symbol: 'itc', hide: false },
-          { symbol: 'lun', hide: false },
-          { symbol: 'gnx', hide: false },
-          { symbol: 'ast', hide: false },
-          { symbol: 'evx', hide: false },
-          { symbol: 'mds', hide: false },
-          { symbol: 'snc', hide: false },
-          { symbol: 'propy', hide: false },
-          { symbol: 'eko', hide: false },
-          { symbol: 'nas', hide: false },
-          { symbol: 'wax', hide: false },
-          { symbol: 'wicc', hide: false },
-          { symbol: 'topc', hide: false },
-          { symbol: 'swftc', hide: false },
-          { symbol: 'dbc', hide: false },
-          { symbol: 'elf', hide: false },
-          { symbol: 'aidoc', hide: false },
-          { symbol: 'qun', hide: false },
-          { symbol: 'iost', hide: false },
-          { symbol: 'yee', hide: false },
-          { symbol: 'dat', hide: false },
-          { symbol: 'theta', hide: false },
-          { symbol: 'let', hide: false },
-          { symbol: 'dta', hide: false },
-          { symbol: 'utk', hide: false },
-          { symbol: 'meet', hide: false },
-          { symbol: 'soc', hide: false },
-          { symbol: 'ruff', hide: false },
-          { symbol: 'ocn', hide: false },
-          { symbol: 'ela', hide: false },
-          { symbol: 'zla', hide: false },
-          { symbol: 'stk', hide: false },
-          { symbol: 'wpr', hide: false },
-          { symbol: 'mtn', hide: false },
-          { symbol: 'mtx', hide: false },
-          { symbol: 'edu', hide: false },
-          { symbol: 'blz', hide: false },
-          { symbol: 'abt', hide: false },
-          { symbol: 'ctxc', hide: false },
-          { symbol: 'ont', hide: false },
-          { symbol: 'bft', hide: false },
-          { symbol: 'wan', hide: false },
-          { symbol: 'kan', hide: false },
-          { symbol: 'lba', hide: false },
-          { symbol: 'poly', hide: false },
-          { symbol: 'pai', hide: false },
-          { symbol: 'wtc', hide: false },
-          { symbol: 'box', hide: false },
-          { symbol: 'gxc', hide: false },
-          { symbol: 'bix', hide: false },
-          { symbol: 'xlm', hide: false },
-          { symbol: 'xvg', hide: false },
-          { symbol: 'hit', hide: false },
-          { symbol: 'ncash', hide: false },
-          { symbol: 'egcc', hide: false },
-          { symbol: 'she', hide: false },
-          { symbol: 'mex', hide: false },
-          { symbol: 'iic', hide: false },
-          { symbol: 'gsc', hide: false },
-          { symbol: 'uc', hide: false },
-          { symbol: 'uip', hide: false },
-          { symbol: 'cnn', hide: false },
-          { symbol: 'aac', hide: false },
-          { symbol: 'uuu', hide: false },
-          { symbol: 'lxt', hide: false },
-          { symbol: 'but', hide: false },
-          { symbol: '18c', hide: false },
-          { symbol: 'datx', hide: false },
-          { symbol: 'portal', hide: false },
-          { symbol: 'gtc', hide: false },
-          { symbol: 'hot', hide: false },
-          { symbol: 'man', hide: false },
-          { symbol: 'get', hide: false },
-          { symbol: 'pc', hide: false },
-          { symbol: 'ren', hide: false },
-          { symbol: 'bkbt', hide: false },
-          { symbol: 'seele', hide: false },
-          { symbol: 'fti', hide: false },
-          { symbol: 'ekt', hide: false },
-          { symbol: 'xmx', hide: false },
-          { symbol: 'ycc', hide: false },
-          { symbol: 'fair', hide: false },
-          { symbol: 'ssp', hide: false },
-          { symbol: 'lym', hide: false },
-          { symbol: 'zjlt', hide: false },
-          { symbol: 'pnt', hide: false },
-          { symbol: 'idt', hide: false },
-          { symbol: 'dac', hide: false },
-          { symbol: 'bcv', hide: false },
-          { symbol: 'tos', hide: false },
-          { symbol: 'musk', hide: false },
-          { symbol: 'add', hide: false },
-          { symbol: 'mt', hide: false },
-          { symbol: 'kcash', hide: false },
-          { symbol: 'ncc', hide: false },
-          { symbol: 'rccc', hide: false },
-          { symbol: 'hpt', hide: false },
-          { symbol: 'cvcoin', hide: false },
-          { symbol: 'rte', hide: false },
-          { symbol: 'trio', hide: false },
-          { symbol: 'grs', hide: false },
-          { symbol: 'ardr', hide: false },
-          { symbol: 'nano', hide: false },
-          { symbol: 'zen', hide: false },
-          { symbol: 'rbtc', hide: false },
-          { symbol: 'bsv', hide: false },
-          { symbol: 'mxc', hide: false },
-          { symbol: 'xtz', hide: false },
-          { symbol: 'nuls', hide: false },
-          { symbol: 'cova', hide: false },
-          { symbol: 'lamb', hide: false },
-          { symbol: 'cvnt', hide: false },
-          { symbol: 'dock', hide: false },
-          { symbol: 'btt', hide: false },
-          { symbol: 'sc', hide: false },
-          { symbol: 'kmd', hide: false },
-          { symbol: 'loom', hide: false },
-          { symbol: 'nexo', hide: false },
-          { symbol: 'etn', hide: false },
-          { symbol: 'npxs', hide: false },
-          { symbol: 'top', hide: false },
-          { symbol: 'doge', hide: false },
-          { symbol: 'iris', hide: false },
-          { symbol: 'ugas', hide: false },
-          { symbol: 'atom', hide: false },
-          { symbol: 'tt', hide: false },
-          { symbol: 'new', hide: false }
-        ]
-        ignorList.forEach(function(item) {
-          if (!item.hide) {
-            vm.usableMap[item.symbol] = 1
-          }
-        })
-        vm.socket(
-          url,
-          [
-            //   实时价格
-            { sub: 'market.overview' }
-            //   指定货币对的订单本
-            // {
-            //   sub: 'market.ontbtc.depth.step0',
-            //   symbol: transactionPair.replace('_', ''),
-            //   pick: ['bids.29', 'asks.29'],
-            //   step: 'step0'
-            // }
-          ],
 
-          JSON.stringify({ pong: new Date().getTime() }),
-          function(data) {
-            let reader = new FileReader()
-            reader.onload = function() {
-              var result = JSON.parse(pako.inflate(reader.result, { to: 'string' }))
-              if (result.data) {
-                if (!vm.dataMap.huobi) {
-                  vm.dataMap.huobi = {}
-                }
-                result.data.forEach(function(item) {
-                  var index = -1
-                  markets.forEach(function(m, idx) {
-                    if (new RegExp(m + '$').test(item.symbol)) {
-                      index = idx
-                    }
-                  })
-                  var current = markets[index]
-                  if (current === undefined) {
-                    return
-                  }
-                  item.symbol = item.symbol.replace(current, '_' + current)
-                  if (vm.usableMap[current.split('_')] === undefined) {
-                    return
-                  }
-                  if (markets.indexOf(item.symbol.split('_')[1]) > -1) {
-                    if (vm.dataMap.huobi[item.symbol] === undefined) {
-                      vm.dataMap.huobi[item.symbol] = item
-                    } else {
-                      vm.dataMap.huobi[item.symbol] = Object.assign({}, vm.dataMap.huobi[item.symbol], item)
-                    }
-                  }
-                })
-                // 转换成usdt价格
-                var btc_usdt = vm.dataMap.huobi.btc_usdt.close * 1
-                if (btc_usdt <= 7000 || btc_usdt >= 8300) {
-                  if (
-                    new Date().getTime() - vm.huobi_btc_usdt_listener.time > 5 * 60 * 1000 ||
-                    Math.abs(vm.huobi_btc_usdt_listener.price - btc_usdt) > 30
-                  ) {
-                    vm.huobi_btc_usdt_listener.time = new Date().getTime()
-                    vm.huobi_btc_usdt_listener.price = btc_usdt
-                    vm.ajax(
-                      'https://sc.ftqq.com/' + sckey1 + '.send?text=btc' + btc_usdt + '波动较大@请及时关注',
-                      'GET'
-                    ).then(function(d) {})
-                    vm.ajax(
-                      'https://sc.ftqq.com/' + sckey2 + '.send?text=btc' + btc_usdt + '波动较大@请及时关注',
-                      'GET'
-                    ).then(function(d) {})
-                  }
-                }
-                var usdt_husd = vm.dataMap.huobi.usdt_husd.close
-                var eth_usdt = vm.dataMap.huobi.eth_usdt.close
-                var ht_usdt = vm.dataMap.huobi.ht_usdt.close
-                for (const item in vm.dataMap.huobi) {
-                  if (vm.dataMap.huobi.hasOwnProperty(item)) {
-                    const element = vm.dataMap.huobi[item]
-                    if (item.indexOf('_usdt') > -1) {
-                      element.usdtPrice = element.close
-                    } else if (item.indexOf('_btc') > -1) {
-                      element.usdtPrice = (element.close * btc_usdt).toFixed(8) * 1
-                    } else if (item.indexOf('_husd') > -1) {
-                      if (item === 'usdt_husd') {
-                        element.usdtPrice = element.close
-                      } else {
-                        element.usdtPrice = (element.close * usdt_husd).toFixed(8) * 1
-                      }
-                    } else if (item.indexOf('_eth') > -1) {
-                      element.usdtPrice = (element.close * eth_usdt).toFixed(8) * 1
-                    } else if (item.indexOf('_ht') > -1) {
-                      element.usdtPrice = (element.close * ht_usdt).toFixed(8) * 1
-                    }
-                    if (!vm.allData[item]) {
-                      vm.allData[item] = {}
-                    }
-                    vm.allData[item] = Object.assign({}, vm.allData[item], {
-                      huobi_price: element.usdtPrice,
-                      symbol: item
-                    })
-                    vm.allData[item].spread = vm.setSpread(vm.allData[item])
-                    vm.dataMap.huobi[item] = Object.assign({}, vm.dataMap.huobi[item], element)
-                  }
-                }
-              }
-              vm.sortBy()
-              vm.$forceUpdate()
-            }
-            reader.readAsBinaryString(data)
-          }
-        )
+JSON.stringify([].slice.call(document.querySelectorAll('.finance_table .body_list ')).filter((v)=>{
+	return !(v.querySelectorAll('.action_group .action_btn:not(.disabled)').length==2&&!v.querySelector('.action_group .to-exchange .disabled'))
+}).map(function(v){return v.querySelector('dd:first-child').innerText.trim().toLowerCase()}))
+     */
+        var ignorList = ['dta','wpr','wax','lym','tnb','bft','zil','rcn','cnn','req','wtc','man','ast','ors','sbtc','dat','hot',"husd","gusd","tusd","pax","usdc","hb10","icx","ven","phx","adx","bcd","zil","bcx","sbtc","etf","bifi","dgb","cdc","eosdac","ae","inc","gve","eon","eop","meetone","sexc","add","iq","hpt","ong","xtz","hvt","tfuel","bt2","bt1"]
+        
+
+        vm.ajax('https://www.huobi.co/-/x/pro/market/overview5?r='+btoa(new Date().getTime()).toLowerCase().substr(0,6),'GET').then(function(d){
+        	d = JSON.parse(d.response).data;
+	        vm.socket(
+	          url,
+	          [
+	            //   实时价格
+	            { sub: 'market.overview' }
+	            //   指定货币对的订单本
+	            // {
+	            //   sub: 'market.ontbtc.depth.step0',
+	            //   symbol: transactionPair.replace('_', ''),
+	            //   pick: ['bids.29', 'asks.29'],
+	            //   step: 'step0'
+	            // }
+	          ],
+
+	          JSON.stringify({ pong: new Date().getTime() }),
+	          function(data) {
+	            let reader = new FileReader()
+	            reader.onload = function() {
+	              var result = JSON.parse(pako.inflate(reader.result, { to: 'string' }))
+	              if (result.data) {
+	                if (!vm.dataMap.huobi) {
+	                  vm.dataMap.huobi = {}
+	                }
+	                result.data = result.data.concat(d)
+	                result.data.forEach(function(item) {
+	                  var index = -1
+	                  markets.forEach(function(m, idx) {
+	                    if (new RegExp(m + '$').test(item.symbol)) {
+	                      index = idx
+	                    }
+	                  })
+	                  var current = markets[index]
+	                  if (current === undefined) {
+	                    return
+	                  }
+	                  item.symbol = item.symbol.replace(current, '_' + current)
+	                  if (ignorList.indexOf(item.symbol.split('_')[0])>-1) {
+	                    return
+	                  }
+	                  if (markets.indexOf(item.symbol.split('_')[1]) > -1) {
+	                    if (vm.dataMap.huobi[item.symbol] === undefined) {
+	                      vm.dataMap.huobi[item.symbol] = item
+	                    } else {
+	                      vm.dataMap.huobi[item.symbol] = Object.assign({}, vm.dataMap.huobi[item.symbol], item)
+	                    }
+	                  }
+	                })
+	                // 转换成usdt价格
+	                var btc_usdt = vm.dataMap.huobi.btc_usdt.close * 1
+	                if (btc_usdt <= 7000 || btc_usdt >= 8900||Math.abs(vm.huobi_btc_usdt_listener.price - btc_usdt) > 30) {
+	                  if (
+	                    new Date().getTime() - vm.huobi_btc_usdt_listener.time > 5 * 60 * 1000 ||
+	                    Math.abs(vm.huobi_btc_usdt_listener.price - btc_usdt) > 30
+	                  ) {
+	                    vm.huobi_btc_usdt_listener.time = new Date().getTime()
+	                    vm.huobi_btc_usdt_listener.price = btc_usdt
+	                    vm.ajax(
+	                      'https://sc.ftqq.com/' + sckey1 + '.send?text=btc' + btc_usdt + '波动较大@请及时关注',
+	                      'GET'
+	                    ).then(function(d) {})
+	                    vm.ajax(
+	                      'https://sc.ftqq.com/' + sckey2 + '.send?text=btc' + btc_usdt + '波动较大@请及时关注',
+	                      'GET'
+	                    ).then(function(d) {})
+	                  }
+	                }
+	                var eth_usdt = vm.dataMap.huobi.eth_usdt.close
+	                var ht_usdt = vm.dataMap.huobi.ht_usdt.close
+	                for (const item in vm.dataMap.huobi) {
+	                  if (vm.dataMap.huobi.hasOwnProperty(item)) {
+	                    const element = vm.dataMap.huobi[item]
+	                    if (item.indexOf('_usdt') > -1) {
+	                      element.usdtPrice = element.close
+	                    } else if (item.indexOf('_btc') > -1) {
+	                      element.usdtPrice = (element.close * btc_usdt).toFixed(8) * 1
+	                    } else if (item.indexOf('_eth') > -1) {
+	                      element.usdtPrice = (element.close * eth_usdt).toFixed(8) * 1
+	                    } else if (item.indexOf('_ht') > -1) {
+	                      element.usdtPrice = (element.close * ht_usdt).toFixed(8) * 1
+	                    }
+	                    if (!vm.allData[item]) {
+	                      vm.allData[item] = {}
+	                    }
+	                    vm.allData[item] = Object.assign({}, vm.allData[item], {
+	                      huobi_price: element.usdtPrice,
+	                      symbol: item
+	                    })
+	                    vm.allData[item].spread = vm.setSpread(vm.allData[item])
+	                    vm.dataMap.huobi[item] = Object.assign({}, vm.dataMap.huobi[item], element)
+	                  }
+	                }
+	              }
+	              vm.sortBy()
+	              vm.$forceUpdate()
+	            }
+	            reader.readAsBinaryString(data)
+	          }
+	        )
+        })
       },
       get_okex: function(transactionPair) {
         var vm = this
         var url = 'wss://okexcomreal.bafang.com:10441/websocket'
         var markets = ['usdt', 'btc', 'eth', 'okb']
+        var ignorList = ['dta','wpr','wax','lym','tnb','bft','zil','rcn','cnn','req','wtc','man','ast','ors','sbtc']
         vm.socket(
           url,
           [
@@ -1418,6 +542,9 @@
                   if (!/^f-/.test(item.id)) {
                     item.id = item.id.replace('t-', '')
                     if (markets.indexOf(item.id.split('_')[1]) > -1) {
+                    	if(ignorList.indexOf(item.id.split('_')[0])>-1){
+                    		return 
+                    	}
                       var obj = {
                         high: item.h * 1,
                         low: item.l * 1,
@@ -1490,6 +617,7 @@
         ).then(function(data) {
           var markets = ['usd', 'btc', 'eth', 'usdt']
           var ignor = ['eur', 'jpy', 'gbp', 'xlm', 'dai'].join('|')
+          var ignorList = ['dta','wpr','wax','lym','tnb','bft','zil','rcn','cnn','req','wtc','man','ast','ors','sbtc','dat','hot',"bnb","btm","hcc","icn","llt","yoyo","ctr","bcpt","arn","gto","zil","ae","chat","etf","atd"]
           var reg = new RegExp('(' + ignor + ')$', 'i')
           JSON.parse(data.response).forEach(function(item) {
             item[0] = item[0].toLowerCase()
@@ -1516,6 +644,9 @@
                 return
               }
               item[0] = item[0].replace(new RegExp(current + '$'), '_' + current)
+              if(ignorList.indexOf(item[0].split('_')[0])>-1){
+              	return;
+              }
               item = {
                 symbol: item[0],
                 change: item[6],
@@ -1672,7 +803,6 @@
                 'POWR_USDT',
                 'FIL_USDT',
                 'BCD_USDT',
-                'SBTC_USDT',
                 'GOD_USDT',
                 'BCX_USDT',
                 'QSP_USDT',
@@ -1711,10 +841,8 @@
                 'CS_USDT',
                 'MAN_USDT',
                 'REM_USDT',
-                'LYM_USDT',
                 'ONG_USDT',
                 'ONT_USDT',
-                'BFT_USDT',
                 'IHT_USDT',
                 'SENC_USDT',
                 'TOMO_USDT',
@@ -1806,7 +934,6 @@
                 'QASH_BTC',
                 'POWR_BTC',
                 'BCD_BTC',
-                'SBTC_BTC',
                 'GOD_BTC',
                 'BCX_BTC',
                 'INK_BTC',
@@ -1846,7 +973,6 @@
                 'XMC_BTC',
                 'GRIN_BTC',
                 'BEAM_BTC',
-                'LYM_BTC',
                 'HC_BTC',
                 'XVG_BTC',
                 'NANO_BTC',
@@ -1962,11 +1088,9 @@
                 'CS_ETH',
                 'MAN_ETH',
                 'REM_ETH',
-                'LYM_ETH',
                 'INSTAR_ETH',
                 'ONG_ETH',
                 'ONT_ETH',
-                'BFT_ETH',
                 'IHT_ETH',
                 'SENC_ETH',
                 'TOMO_ETH',
