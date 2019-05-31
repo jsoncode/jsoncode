@@ -59,7 +59,10 @@
               		<a href="https://binance.net" target="_blank">binance.net</a>
               </th>
               <th @click="sortBy('okex')">
-              		<a href="https://okex.me" target="_blank">okex.me</a>
+                  <a href="https://okex.me" target="_blank">okex.me</a>
+              </th>
+              <th @click="sortBy('okex')">
+                  <a href="https://gateio.news" target="_blank">gateio.news</a>
               </th>
               <th @click="sortBy('spread')">价差比例%</th>
             </tr>
@@ -75,7 +78,10 @@
               		<span v-text="item.binance_price"></span>
               </td>
               <td>
-              		<span v-text="item.okex_price"></span>
+                  <span v-text="item.okex_price"></span>
+              </td>
+              <td>
+                  <span v-text="item.gateio_price"></span>
               </td>
               <td v-text="item.spread"></td>
             </tr>
@@ -122,7 +128,7 @@
           vm.get_binance()
           // vm.get_ajax_bitfinex()
           vm.get_okex()
-          // vm.get_gateio()
+          vm.get_gateio()
         }
       },
       setSpread: function(item) {
@@ -522,6 +528,20 @@ JSON.stringify([].slice.call(document.querySelectorAll('.finance_table .body_lis
         var url = 'wss://okexcomreal.bafang.com:10441/websocket'
         var markets = ['usdt', 'btc', 'eth', 'okb']
         var ignorList = ['ncash','npxs','dta','wpr','wax','lym','tnb','bft','zil','rcn','cnn','req','wtc','man','ast','ors','sbtc']
+        ignorList = ignorList.concat(["ae","alv","atom","bcx","bt1","bt2","eox","etf","f4sbtc","nxt","pyn","sbtc","stc","tfuel","usdt-trc20","wbtc","wtc","zil"])
+        /*
+        JSON.stringify([].slice.call(document.querySelectorAll('.account-table-container tbody tr')).filter((v)=>{
+			var txt = v.querySelector('td:last-child').innerText;
+			return !/充值/.test(txt)&&!/提币/.test(txt)
+		}).map((v)=>{
+			var txt = v.querySelector('td:first-child .currency-name').innerText;
+			if(v.querySelector('td:first-child .full-name')){
+				var fname = v.querySelector('td:first-child .full-name').innerText;
+				txt = txt.replace(fname,'')
+			}
+			return txt.toLowerCase()
+		}))
+		*/
         vm.socket(
           url,
           [
