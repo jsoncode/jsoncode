@@ -53,16 +53,16 @@
               <th @click="sortBy('assetPair')">交易对</th>
   
               <th @click="sortBy('huobi')">
-              		<a href="https://huobi.co" target="_blank">huobi.co</a>
+              		<div>huobi.co</div>
               </th>
               <th @click="sortBy('binance')">
-              		<a href="https://binance.net" target="_blank">binance.net</a>
+              		<div>binance.net</div>
               </th>
               <th @click="sortBy('okex')">
-                  <a href="https://okex.me" target="_blank">okex.me</a>
+                  <div>okex.me</div>
               </th>
-              <th @click="sortBy('okex')">
-                  <a href="https://gateio.news" target="_blank">gateio.news</a>
+              <th @click="sortBy('bitcoinvn')">
+                  <div>bitcoinvn</div>
               </th>
               <th @click="sortBy('spread')">价差比例%</th>
             </tr>
@@ -81,7 +81,7 @@
                   <span v-text="item.okex_price"></span>
               </td>
               <td>
-                  <span v-text="item.gateio_price"></span>
+                  <span v-text="item.bitcoinvn_price"></span>
               </td>
               <td v-text="item.spread"></td>
             </tr>
@@ -128,7 +128,8 @@
           vm.get_binance()
           // vm.get_ajax_bitfinex()
           vm.get_okex()
-          vm.get_gateio()
+          // vm.get_gateio()
+          // vm.get_bitcoinvn()
         }
       },
       setSpread: function(item) {
@@ -272,6 +273,69 @@
           ).then(function(d) {})
         }
       },
+      get_bitcoinvn: function(transactionPair) {
+        var vm = this
+        var url = 'wss://www.bitcoinvn.cloud/socket/v2'
+        vm.socket(
+          url,
+          [
+            { event: 'subscribe', channel: 'sub_market_quotation' }
+            // { symbol: transactionPair, event: 'subscribe', channel: 'sub_depth', limit: 200 },
+            // { symbol: transactionPair, event: 'subscribe', channel: 'sub_trades' }
+          ],
+          null,
+          function(data) {
+            data = JSON.parse(data)
+            if (!vm.dataMap.bitcoinvn) {
+              vm.dataMap.bitcoinvn = {}
+            }
+            if (data.data) {
+              var btc_usdt = data.data.btc_usdt.split(',')[1] * 1
+              var eth_usdt = data.data.eth_usdt.split(',')[1] * 1
+              var usdt_vnd = data.data.usdt_vnd.split(',')[1] * 1
+
+              for (const item in data.data) {
+                if (data.data.hasOwnProperty(item)) {
+                  const str = data.data[item]
+                  var element = str.split(',')
+                  var close = element[1] * 1
+                  var usdtPrice = close
+                  if (item.indexOf('_btc') > -1) {
+                    if (item !== 'btc_usdt') {
+                      usdtPrice = (close * btc_usdt).toFixed(8) * 1
+                    }
+                  } else if (item.indexOf('_vnd') > -1) {
+                    if (item !== 'usdt_vnd') {
+                      usdtPrice = (close / usdt_vnd).toFixed(8) * 1
+                    }
+                  } else if (item.indexOf('_eth') > -1) {
+                    usdtPrice = (close * eth_usdt).toFixed(8) * 1
+                  }
+                  if (!vm.allData[item]) {
+                    vm.allData[item] = {}
+                  }
+                  vm.allData[item] = Object.assign({}, vm.allData[item], {
+                    bitcoinvn_price: usdtPrice,
+                    symbol: item
+                  })
+                  vm.allData[item].spread = vm.setSpread(vm.allData[item])
+                  vm.dataMap.bitcoinvn[item] = {
+                    vol: element[0] * 1,
+                    close: close,
+                    high: element[2] * 1,
+                    low: element[3] * 1,
+                    change: element[4] * 1,
+                    symbol: item
+                  }
+                }
+              }
+
+              vm.sortBy()
+              vm.$forceUpdate()
+            }
+          }
+        )
+      },
       get_binance: function(transactionPair) {
         var vm = this
         console.log('get binance data')
@@ -285,7 +349,7 @@
 		}))
 
       */
-        var ignorList = ['ncash','npxs','dta','wpr','wax','lym','tnb','bft','zil','rcn','cnn','req','wtc','man','ast','ors','sbtc','dat','hot',"bnb","btm","hcc","icn","llt","yoyo","ctr","bcpt","arn","gto","zil","ae","chat","etf","atd"]
+        var ignorList = ['algo','btt','mith','ncash','npxs','dta','wpr','wax','lym','tnb','bft','zil','rcn','cnn','req','wtc','man','ast','ors','sbtc','dat','hot',"bnb","btm","hcc","icn","llt","yoyo","ctr","bcpt","arn","gto","zil","ae","chat","etf","atd"]
         var url = 'wss://stream.binance.net/stream?streams=!miniTicker@arr@3000ms'
         vm.socket(
           url,
@@ -418,7 +482,7 @@ JSON.stringify([].slice.call(document.querySelectorAll('.finance_table .body_lis
 	return !(v.querySelectorAll('.action_group .action_btn:not(.disabled)').length==2&&!v.querySelector('.action_group .to-exchange .disabled'))
 }).map(function(v){return v.querySelector('dd:first-child').innerText.trim().toLowerCase()}))
      */
-        var ignorList = ['ncash','npxs','dta','wpr','wax','lym','tnb','bft','zil','rcn','cnn','req','wtc','man','ast','ors','sbtc','dat','hot',"husd","gusd","tusd","pax","usdc","hb10","icx","ven","phx","adx","bcd","zil","bcx","sbtc","etf","bifi","dgb","cdc","eosdac","ae","inc","gve","eon","eop","meetone","sexc","add","iq","hpt","ong","xtz","hvt","tfuel","bt2","bt1"]
+        var ignorList = ['algo','btt','aac','ncash','npxs','dta','wpr','wax','lym','tnb','bft','zil','rcn','cnn','req','wtc','man','ast','ors','sbtc','dat','hot',"husd","gusd","tusd","pax","usdc","hb10","icx","ven","phx","adx","bcd","zil","bcx","sbtc","etf","bifi","dgb","cdc","eosdac","ae","inc","gve","eon","eop","meetone","sexc","add","iq","hpt","ong","xtz","hvt","tfuel","bt2","bt1"]
         
 
         vm.ajax('https://www.huobi.co/-/x/pro/market/overview5?r='+btoa(new Date().getTime()).toLowerCase().substr(0,6),'GET').then(function(d){
@@ -527,7 +591,7 @@ JSON.stringify([].slice.call(document.querySelectorAll('.finance_table .body_lis
         var vm = this
         var url = 'wss://okexcomreal.bafang.com:10441/websocket'
         var markets = ['usdt', 'btc', 'eth', 'okb']
-        var ignorList = ['ncash','npxs','dta','wpr','wax','lym','tnb','bft','zil','rcn','cnn','req','wtc','man','ast','ors','sbtc']
+        var ignorList = ['mith','aac','ncash','npxs','dta','wpr','wax','lym','tnb','bft','zil','rcn','cnn','req','wtc','man','ast','ors','sbtc']
         ignorList = ignorList.concat(["ae","alv","atom","bcx","bt1","bt2","eox","etf","f4sbtc","nxt","pyn","sbtc","stc","tfuel","usdt-trc20","wbtc","wtc","zil"])
         /*
         JSON.stringify([].slice.call(document.querySelectorAll('.account-table-container tbody tr')).filter((v)=>{
