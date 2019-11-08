@@ -35,6 +35,7 @@
         </div>
         <div class="flex1">
             <textarea placeholder="after Html" id="Html_"></textarea>
+            <textarea placeholder="after Html" id="Html_2"></textarea>
         </div>
     </div>
     <div class="center">
@@ -64,6 +65,7 @@
         var Html = document.getElementById('Html').value;
         var Html_ = document.getElementById('Html_');
         Html_.value = minHtml(Html);
+        Html_2.value = minHtml(Html.replace(/"/g,'\"'));
     }
 
     function getMinCss() {
