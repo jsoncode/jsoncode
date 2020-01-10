@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+    <style>
+        html, body, video {
+            height: 100%;
+        }
+
+        body {
+            margin: 0;
+        }
+
+        video {
+            width: 100%;
+            display: block;
+        }
+    </style>
+</head>
+<body>
+<video autoplay></video>
+<script src="https://raw.githubusercontent.com/nextcloud/passman/master/js/vendor/llqrcode/llqrcode.js"></script>
+<script>
+    var video = document.querySelector('video');
+    var audio = document.querySelector('audio');
+    window.URL = window.URL || window.webkitURL || window.mozURL || window.msURL;
+    navigator.getUserMedia = navigator.getUserMedia || navigator.webkitGetUserMedia || navigator.mozGetUserMedia;
+    var callbackName = location.search.match(/callback=([^=]+)/);
+    var backurl = location.search.match(/backurl=([^=]+)/);
+    if (callbackName) {
+        callbackName = callbackName[1];
+    }
+    if (backurl) {
+        backurl = decodeURIComponent(backurl[1]);
+    }
+    window.openScanner(function (result) {
+        if (callbackName && window.parent) {
+            window.parent[callbackName](result);
+        } else if (backurl) {
+            location.href = backurl + result;
+        } else {
+            alert(result);
+        }
+    });
+
+    function getMediaDeviceId() {
+        return new Promise(function (resolve, reject) {
+            if (navigator.mediaDevices) {
+                navigator.mediaDevices.enumerateDevices().then(function (devices) {
+                    var ids = [];
+                    devices.forEach(function (dv) {
+                        var kind = dv.kind;
+                        if (kind.match(/^video.*/)) {
+                            ids.push(dv.deviceId);
+                        }
+                    });
+                    // 默认使用后置摄像头。根据测试，在手机上后置摄像头的id会在之后获取
+                    resolve(ids[ids.length - 1]);
+                });
+            } else {
+                resolve();
+            }
+        });
+    }
+
+    function openCamera(back) {
+        getMediaDeviceId(navigator.mediaDevices).then(function (id) {
+
+            navigator.getUserMedia({
+                audio: false,
+                video: {
+                    width: 800,
+                    height: 600,
+                    deviceId: id || false,
+                    // 帧率
+                    frameRate: {
+                        indeal: 10
+                    },
+                    facingMode: {
+                        indeal: 'environment', //user :前置摄像头， environment 后置摄像头
+                        // exact:'user' //exact 是拒绝某一个摄像头
+                    }
+                },
+            }, function (stream) {
+                back(stream)
+            }, function (err) {
+                if (err.name === 'OverconstrainedError') {
+                    alert(JSON.stringify(err))
+                } else {
+                    alert(err.name || err);
+                }
+            });
+        });
+    }
+
+    function webQrScanner(back) {
+        if (!video || video.videoWidth === 0 || video.videoHeight === 0) {
+            return;
+        }
+        var canvas = document.createElement('canvas');
+        canvas.width = video.videoWidth;
+        canvas.height = video.videoHeight;
+        canvas.getContext('2d').drawImage(video, 0, 0);
+        var baseUrl = canvas.toDataURL();
+        var blob = base64ToBlob(baseUrl);
+        var url = blobToUrl(blob);
+        qrcode.decode(url);
+        qrcode.callback = function (imgMsg) {
+            if (imgMsg === 'error decoding QR Code') {
+                back()
+            } else {
+                back(imgMsg)
+            }
+        };
+    }
+
+    function openScanner(back) {
+        openCamera(function (videoStream) {
+            if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+                video.srcObject = videoStream;
+            } else {
+                video.src = videoStream;
+            }
+            video.onloadedmetadata = function (e) {
+                video.play();
+            };
+            var time = 60000;
+            var timer = setInterval(function () {
+                if (time <= 0) {
+                    videoStream.getTracks().forEach(function (item) {
+                        item.stop();
+                    })
+                    clearInterval(timer);
+                    back()
+                } else {
+                    webQrScanner(function (result) {
+                        if (result) {
+                            videoStream.getTracks().forEach(function (item) {
+                                item.stop();
+                            })
+                            clearInterval(timer);
+                            back(result);
+                        }
+                    });
+                    time -= 1000;
+                }
+            }, 1000)
+        });
+    }
+
+    function base64ToBlob(base64) {
+        var arr = base64.split(','),
+            mime = arr[0].match(/:(.*?);/)[1],
+            bstr = atob(arr[1]),
+            n = bstr.length,
+            u8arr = new Uint8Array(n);
+        while (n--) {
+            u8arr[n] = bstr.charCodeAt(n);
+        }
+        var blob = new Blob([u8arr], {type: mime});
+        return blob;
+    }
+
+    function blobToUrl(blob) {
+        var url = null;
+        if (window.createObjectURL != undefined) {
+            // basic
+            url = window.createObjectURL(blob);
+        } else if (window.URL != undefined) {
+            // mozilla(firefox)
+            url = window.URL.createObjectURL(blob);
+        } else if (window.webkitURL != undefined) {
+            // webkit or chrome
+            url = window.webkitURL.createObjectURL(blob);
+        }
+        return url;
+    }
+
+</script>
+</body>
+</html>
