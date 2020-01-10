@@ -16,4 +16,10 @@
 
 [身份证号校验功能](https://jsoncode.github.io/idcard)
 
-[getUserMedia 开发api](https://jsoncode.github.io/getUserMedia)
+[体验js扫码功能](https://jsoncode.github.io/web-scanner)
+```
+var backurl = encodeURIComponent('https://www.baidu.com/s?wd=');
+var url = 'https://jsoncode.github.io/web-scanner?backurl='+backurl;
+
+location.href = url;
+```
