@@ -35,6 +35,12 @@
         backurl = decodeURIComponent(backurl[1]);
     }
     window.openScanner(function (result) {
+        if(result===undefined){
+            if(confirm('time out')){
+                location.reload();
+            }
+            return;
+        }
         if (callbackName && window.parent) {
             window.parent[callbackName](result);
         } else if (backurl) {
@@ -43,6 +49,8 @@
             if(/https?:\/\//.test(result)){
                 if(confirm('result : '+result+' \n confirm and jump')){
                     location.href = result;
+                }else{
+                    location.reload();
                 }
             }else{
                 if(confirm('result : '+result+' \n confirm and reload')){
