@@ -40,7 +40,15 @@
         } else if (backurl) {
             location.href = backurl + result;
         } else {
-            alert(result);
+            if(/https?:\/\//.test(result)){
+                if(confirm('result : '+result+' \n confirm and jump')){
+                    location.href = result;
+                }
+            }else{
+                if(confirm('result : '+result+' \n confirm and reload')){
+                    location.reload();
+                }
+            }
         }
     });
 
