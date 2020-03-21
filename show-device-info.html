@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1.0,user-scalable=no">
+    <title>view language</title>
+    <style>
+        html, body {
+            height: 100%;
+            width: 100%;
+        }
+
+        body {
+            margin: 0;
+        }
+
+        pre {
+            padding: 1rem;
+            white-space: pre-wrap;
+            font-family: Consolas;
+            line-height: 2;
+            box-sizing: border-box;
+            margin: 0;
+        }
+    </style>
+</head>
+<body>
+<pre>
+
+</pre>
+<script>
+    var pre = document.querySelector('pre');
+    var str = navigator.language
+        + '\n\n' + navigator.languages
+        + '\n\n' + navigator.userAgent
+        + '\n\ninnerWidth：' + innerWidth + ' innerHeight：' + innerHeight
+        + '\n\ndevice Pixel Ratio：' + window.devicePixelRatio
+    pre.innerHTML = str;
+</script>
+</body>
+</html>
