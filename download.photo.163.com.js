@@ -1,25 +1,30 @@
 /**
  * @auther Chris
  * @github github.com/jsoncode
- * 
+ *
  * 单线程全量下载 网易相册照片 工具
  * 会保留原有照片的exif信息（相机品牌，型号，光圈，曝光度，等信息）
  * 保存的目录结构为：/photo/相册id/相册id-照片id.jpg
- * 
+ *
  * 执行方法（小白专用，大神跳过）：
- * 
+ *
  * 1，安装nodejs:
  * 		node 官网：https://nodejs.org/
  * 		下载地址：https://nodejs.org/dist/v10.15.3/node-v10.15.3-x64.msi
  * 2，使用npm安装依赖包： piexifjs single-line-log
  * 		npm install -g cnpm --registry=https://registry.npm.taobao.org
  * 		cnpm install piexifjs
+ * 		cnpm install single-line-log
+ * 		cnpm install iconv-lite
+ * 		cnpm install sanitize-filename
  * 		...
  * 3，配置cookies
  *  	只需要一个NTES_SESS
  *  	打开控制台，找到http://photo.163.com下的cookie，进行搜索NTES_SESS
  * 4，在cmd命令行执行：node download.photo.163.com.js 就可以开始下载了。
  */
+"use strict";
+
 // 需要的依赖包
 const fs = require('fs');
 const http = require('http');
@@ -28,14 +33,64 @@ const URL = require('url');
 const zlib = require('zlib');
 const piexif = require("piexifjs");
 const slog = require('single-line-log').stdout;
+const iconv = require('iconv-lite');
+const sanitize = require('sanitize-filename');
+
 
 // 需要配置的信息
 var userInfo = {
-	name:'',
-	cookie_NTES_SESS:'',//
-	photoDir:'./photo/',//你要保存相片的目录
+  name:'', // your username here, usually xxx for xxx@163.com, no domain name
+  cookie_NTES_SESS:'',// your session token here
+  photoDir:'./photo/',//你要保存相片的目录
 };
 
+// 图片存储在photoDir/groupname/photoname.jpg, 么个group文件夹中包含一个info.txt，描述相册信息
+// 可以修改以下两个函数调整groupname和photoname格式为你想要的格式
+function groupname(group) {
+  // group 的数据结构
+  /* ----------------------------------
+  { id: id,
+  name: 名字,
+  s: ?,
+  desc: 描述,
+  st: ?,
+  au: ?,
+  count: 数字数量,
+  t: ?,
+  ut: ?,
+  cvid: 封面图片id,
+  curl: 封面缩略图url,
+  surl: 封面方形裁剪小图url,
+  lurl: 封面方形裁剪大图url,
+  dmt: ?,
+  alc: ?,
+  kw: ?,
+  purl: ? }
+  ---------------------------------- */
+
+  return sanitize(group.id + '[' + group.name.trim() +']');
+}
+
+function photoname(photo) {
+  // photo 的数据结构
+  /* ----------------------------------
+  { id: 数字id,
+  s: ?,
+  ourl: 原图url,
+  ow: 原图宽度,
+  oh: 114原图高度,
+  murl: 中图url,
+  surl: 小图url,
+  turl: 缩略图url,
+  qurl: 方形裁剪小图url,
+  desc: 描述,
+  t: ?,
+  kw: ?,
+  picsetids: ?,
+  t1: ? }
+  ---------------------------------- */
+  return sanitize(photo.id + '[' + photo.desc.trim() +']');
+}
 
 // 照片需要的服务器地址
 var urlType = {
@@ -44,7 +99,26 @@ var urlType = {
 	'2':'http://img2.ph.126.net',
 };
 
+var sizeType = {
+  '0':'ourl', // 原图
+  '1':'murl', // 中图
+  '2':'surl', // 小图
+  '3':'turl', // 缩略图
+};
 
+
+var header_common = `
+Accept: */*
+Accept-Language: zh-CN,zh;q=0.9,en;q=0.8,en-US;q=0.7,ja;q=0.6,und;q=0.5
+Accept-Encoding: gzip, deflate
+Content-Type: text/plain
+Host: photo.163.com
+Origin: http://photo.163.com
+User-Agent: User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/72.0.3626.121 Safari/537.36
+Connection: keep-alive
+Pragma: no-cache
+Cache-Control: no-cache
+`; // For my case, I will need to add `Cookie: ....` here. Not sure for others
 
 
 // 请求过程中缓存的cookie
@@ -61,7 +135,7 @@ var photoList = [];
 var pb = new ProgressBar('下载进度', 50);
 // 打开首页
 backAjax(`http://photo.163.com/${userInfo.name}/#m=0&p=1`,{
-	headers:'Content-Encoding: gzip',
+	headers:header_common,
 	success:function (data) {
 		var jsFile = data.match(/<script type="text\/javascript">\s*UD\s*=[\s\S]+?albumUrl\s*:\s*['"]([^'"]+)?['"]/);
 		if (jsFile) {
@@ -79,7 +153,7 @@ backAjax(`http://photo.163.com/${userInfo.name}/#m=0&p=1`,{
 function getPhotoGroup(jsFile){
 	// 获取相册列表
 	backAjax(jsFile,{
-		headers:'Content-Encoding: gzip',
+    headers:'Content-Encoding: gzip', // why I cannot use header_common here?
 		success:function (data) {
 			var result = data.match(/(['"][\s\S]+?['"]|\[[^\]]+\]);/g);
 			if (result) {
@@ -104,6 +178,7 @@ function getPhotoGroup(jsFile){
 }
 function getOneGroup(groupIndex){
 	var oneGroup= photoGroupList[groupIndex];
+  console.log('开始下载：' + oneGroup.name + '('+oneGroup.count+'张)');
 	// 获取某一个相册的照片列表
 	var data =[
 		'callCount=1',
@@ -121,15 +196,10 @@ function getOneGroup(groupIndex){
 	// 每次请求一个相册，就会得到一个ALBUMAPPID的cookie
 	backAjax(`http://photo.163.com/photo/${userInfo.name}/dwr/call/plaincall/AlbumBean.getAlbumData.dwr?u=${userInfo.name}`,{
 		method:'POST',
-		headers:`
-			Accept-Encoding: gzip, deflate
-			Content-Length: ${data.length}
-			Content-Type: text/plain
+		headers:header_common + `
+      Content-Length: ${data.length}
 			Cookie: NTES_SESS=${userInfo.cookie_NTES_SESS}
-			Host: photo.163.com
-			Origin: http://photo.163.com
 			Referer: http://photo.163.com/${userInfo.name}/
-			User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/72.0.3626.121 Safari/537.36
 		`,
 		data:data,
 		success:function (data,headers) {
@@ -143,9 +213,10 @@ function getOneGroup(groupIndex){
 						if (list) {
 							list = list[0].replace(/\'/g,'"').replace(/(\w+):([^,\]\}]+)/g,'"$1":$2');
 							photoList = JSON.parse(list).sort(function(v1,v2){return v1.t-v2.t>0?1:-1});
-							downloadPhoto(groupIndex,0,0)
+							downloadPhoto(groupIndex,0,0,0,[]);
 						}else{
-							console.log('未请求到照片列表，可能cookie已失效')
+							console.log('未请求到照片列表，可能cookie已失效或当前相册为空');
+							downloadPhoto(groupIndex+1,0,0,0,[]); // keep calm and carry on
 						}
 					},
 					error:function(err){
@@ -161,29 +232,40 @@ function getOneGroup(groupIndex){
 		}
 	})
 }
-function downloadPhoto(groupIndex,photoIndex,typeNum){
+function downloadPhoto(groupIndex,photoIndex,typeNum,sizeNum,err_list){
 	var oneGroup = photoGroupList[groupIndex];
 	var photo = photoList[photoIndex];
-	typeNum= typeNum===undefined?0:typeNum;
-	photoUrl = urlType[typeNum] + photo.ourl.replace(/^\w/,'');
-	var photoName = oneGroup.id+'-'+photo.id+'-'+photo.ourl.replace(/[\w=-]+\//g,'');
+	typeNum = typeNum===undefined?0:typeNum;
+	var photoUrl = urlType[typeNum] + photo[sizeType[sizeNum]].replace(/^\w/,'');
+  function download(exif) {
+    backAjax(photoUrl,{
+      success:function (data) {
+        if (exif) {
+          data = updateExif(data,exif);
+        }
+        writeimage(oneGroup, photo, data);
+        if (sizeNum > 0) {
+          err_list.push({photo:photo,error:"size="+sizeNum});
+        }
+        nextRequest();
+      },
+      error:function(err){
+        console.log('图片下载失败 - 重新尝试', oneGroup.name, oneGroup.id , photo.desc, photo.id);
+        if (typeNum<2) {
+          downloadPhoto(groupIndex,photoIndex,typeNum+1,sizeNum,err_list);
+        } else if (sizeNum<3) {
+          console.log('尺寸降级为', sizeNum+1);
+          downloadPhoto(groupIndex,photoIndex,0,sizeNum+1,err_list);
+        } else {
+          err_list.push({photo:photo,error:err});
+          nextRequest();
+        }
+      },
+    })
+  }
 	if (photo.t1===0) {
 		// 没有exif信息
-		backAjax(photoUrl,{
-			success:function (data) {
-				downloadImg(photoName,data);
-				nextRequest();
-			},
-			error:function(err){
-				console.log('图片下载失败 重新尝试',photo.id);
-				if (typeNum<2) {
-					typeNum++;
-					downloadPhoto(groupIndex,photoIndex,typeNum);
-				}else{
-					nextRequest();
-				}
-			},
-		});
+    download()
 	}else{
 		// 原图
 		// http://img1.ph.126.net/${ourl}
@@ -200,19 +282,12 @@ function downloadPhoto(groupIndex,photoIndex,typeNum){
 		var exifUrl = `http://photo.163.com/photo/${userInfo.name}/dwr/call/plaincall/PhotoBean.getPhotoExif.dwr`;
 		backAjax(exifUrl,{
 			method:'POST',
-			headers:`
-				Accept: */*
-				Accept-Encoding: gzip, deflate
-				Accept-Language: zh-CN,zh;q=0.9,en;q=0.8,en-US;q=0.7,ja;q=0.6,und;q=0.5
-				Connection: keep-alive
+			headers:header_common + `
 				Content-Length: 151
 				Content-Type: text/plain
 				Cookie: NTES_SESS=${userInfo.cookie_NTES_SESS};ALBUMAPPID=${cookies.ALBUMAPPID}
 				DNT: 1
-				Host: photo.163.com
-				Origin: http://photo.163.com
 				Referer: http://photo.163.com/${userInfo.name}/
-				User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/72.0.3626.121 Safari/537.36
 			`,
 			data:data,
 			success:function (data) {
@@ -220,23 +295,7 @@ function downloadPhoto(groupIndex,photoIndex,typeNum){
 				if (exif) {
 					exif = exif[0].replace(/\'/g,'"').replace(/(\w+):([^,\]\}]+)/g,'"$1":$2');
 					exif = JSON.parse(exif);
-					exif.photoName = photoName;
-
-					backAjax(photoUrl,{
-						success:function (data) {
-							writeInExifAndSave(data,exif);
-							nextRequest();
-						},
-						error:function(err){
-							console.log('图片下载失败 重新尝试',photo.id)
-							if (typeNum<2) {
-								typeNum++;
-								downloadPhoto(groupIndex,photoIndex,typeNum);
-							}else{
-								nextRequest();
-							}
-						},
-					})
+          download(exif);
 				}
 			},
 			error:function (err) {
@@ -245,17 +304,17 @@ function downloadPhoto(groupIndex,photoIndex,typeNum){
 		})
 	}
 
-
 	function nextRequest(){
 		if (photoIndex<photoList.length-1) {
 			loadCount++;
 			photoIndex++;
-			downloadPhoto(groupIndex,photoIndex,0);
+			downloadPhoto(groupIndex,photoIndex,0,0,err_list);
 			pb.render({ completed: loadCount+1, total: allPhotoCount});
 		}else{
+      writesummary(oneGroup, JSON.stringify({information: oneGroup, error_list: err_list}));
 			if (groupIndex<photoGroupList.length-1) {
 				groupIndex++;
-				console.log('继续下载下一个相册',photoGroupList.length,groupIndex);
+				console.log('\n继续下载下一个相册', groupIndex, '/', photoGroupList.length);
 				getOneGroup(groupIndex);
 			}else{
 				pb.render({ completed: allPhotoCount, total: allPhotoCount});
@@ -313,12 +372,13 @@ function backAjax(url,options) {
                         var buffer = Buffer.concat(html);
                         opt.success(buffer,response.headers);
                     }else{
-                        opt.success(html.join(''),response.headers);
+                        var html_str = iconv.decode(Buffer.concat(html), 'gbk');
+                        opt.success(html_str,response.headers);
                     }
                 }
             })
         } else {
-            opt.error(JSON.stringify(response.headers));
+            opt.error(JSON.stringify({url:url,headers:response.headers,statusCode:response.statusCode}));
         }
     });
     req.on('error', function(e) {
@@ -331,7 +391,7 @@ function backAjax(url,options) {
 function formatCookies(){
 	var obj = {
 		mobileadbannercookiekey:'',
-		NTES_SESS:'',//http only 
+		NTES_SESS:'',//http only
 		S_INFO:'',
 		P_INFO:'',
 		NETEASE_AUTH_USERNAME:'',
@@ -346,30 +406,41 @@ function formatHeaders(str) {
     if (str && str.trim()) {
         var list = str.trim().split(/\n/g).map(function(item) {
             var v = item.trim().match(/(^\S+)\s*:\s*([\S\s]+$)/);
-            obj[v[1]] = v[2];
+            // console.log('"'+item+'"');
+            // console.log('2"'+v+'"');
+            if (item.trim()) {
+              obj[v[1]] = v[2];
+            }
         });
     }
     return obj;
 }
 
 
-function downloadImg(filename,data){
-// 判断文件目录是否存在
-	if (!fs.existsSync(userInfo.photoDir)) {
-        fs.mkdirSync(userInfo.photoDir);
-    }
-    var result = filename.split('-')[0];
-
-	if (!fs.existsSync(userInfo.photoDir+result)) {
-        fs.mkdirSync(userInfo.photoDir+result);
-    }
-    var path = userInfo.photoDir+result+'/'+filename.replace(result+'-','');
-	fs.writeFileSync(path, data);
+function makegroupdir(group){
+  if (!fs.existsSync(userInfo.photoDir)) {
+    fs.mkdirSync(userInfo.photoDir);
+  }
+  var groupdir = userInfo.photoDir + '/' + groupname(group);
+	if (!fs.existsSync(groupdir)) {
+    fs.mkdirSync(groupdir);
+  }
+  return groupdir;
 }
 
+function writesummary(group, data){
+  var groupdir = makegroupdir(group);
+  var summarypath = groupdir + '/info.txt';
+	fs.writeFileSync(summarypath, data);
+}
 
+function writeimage(group, photo, data){
+  var groupdir = makegroupdir(group);
+  var imagepath = groupdir + '/' + photoname(photo);
+	fs.writeFileSync(imagepath, data);
+}
 
-function writeInExifAndSave(data,exifInfo){
+function updateExif(data, exifInfo){
 
 	var data = data.toString("binary");
 	var zeroth = {};
@@ -402,7 +473,7 @@ function writeInExifAndSave(data,exifInfo){
 
 	var newData = piexif.insert(exifbytes, data);
 	var newJpeg = Buffer.from(newData, "binary");
-	downloadImg(exifInfo.photoName,newJpeg)
+  return newJpeg;
 }
 
 
@@ -431,7 +502,7 @@ function ProgressBar(description, bar_length){
 
   // 拼接最终文本
   var cmdText = this.description + ': ' + (100*percent).toFixed(2) + '% ' + cell + empty + ' ' + opts.completed + '/' + opts.total;
-  
+
   // 在单行输出文本
   slog(cmdText);
  };
